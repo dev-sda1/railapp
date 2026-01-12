@@ -1,0 +1,24 @@
+{
+  "originHash" : "5bf185a6a3090f0ea17c622cb144e33f4157f939079a6a1a68cd3d136e771efb",
+  "pins" : [
+    {
+      "identity" : "marqueelabel",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/cbpowell/MarqueeLabel",
+      "state" : {
+        "revision" : "c6b4da400c00dfd5db7a4f6e4915ca531d95fc49",
+        "version" : "4.5.3"
+      }
+    },
+    {
+      "identity" : "uk-railway-stations",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/davwheat/uk-railway-stations",
+      "state" : {
+        "revision" : "5360aab436ecbb468ca7056fd911ddcb40f06046",
+        "version" : "1.8.4"
+      }
+    }
+  ],
+  "version" : 3
+}
