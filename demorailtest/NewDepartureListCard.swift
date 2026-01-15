@@ -29,8 +29,10 @@ struct DepartureItem: Identifiable, Codable {
     var additionalServices: [String]? = []
     var platformNo: String? = "Unknown"
     var trainLength: Int
-    var expectedDeparture: String? = "UNKN"
+    var expectedDeparture: String
+    var estimatedDeparture: String? = "UNKN"
     var isDelayed: Bool
+    var delayLength: Int
     var rid: String
     var uid: String
     var sdd: String
@@ -73,7 +75,6 @@ class DeparturesViewModel: ObservableObject {
             
             print("Latest fetch complete")
             self.loadingData = false
-
         }
 
     }
@@ -119,7 +120,7 @@ struct DepartureCardView : View {
                         .foregroundStyle(Color.primary)
                 }.padding([.bottom], 10.0)
                 
-                if vm.loadingData == true || vm.depList.isEmpty {
+                if vm.loadingData == true {
                     VStack(alignment: .leading){
                         Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
                             .opacity(loadingAnimation ? 0.6 : 1)
@@ -173,16 +174,22 @@ struct DepartureCardView : View {
                     .cornerRadius(12.0)
                     .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
                 }else{
-                    ForEach(vm.depList.prefix(4).enumerated(), id: \.offset){ index, departure in
-                        let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
-                        
-                        if index == vm.depList.endIndex - 1 {
-                            TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
-                                .padding([.top], 5.0)
-                                .padding([.bottom], 3.0)
-                        }else{
-                            TrainDepartureCard(id: departure.id, trust_data: trust_data,  tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
+                    if vm.depList.isEmpty == false {
+                        ForEach(vm.depList.prefix(4).enumerated(), id: \.offset){ index, departure in
+                            let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
+                            
+                            if index == vm.depList.endIndex - 1 {
+                                TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                    .padding([.top], 5.0)
+                                    .padding([.bottom], 3.0)
+                            }else{
+                                TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                            }
                         }
+                    }else{
+                        Text("No departures expected for the next two hours.")
+                        .fixedSize(horizontal: false, vertical: true)
+                        .foregroundStyle(Color.primary)
                     }
                 }
             }
@@ -207,7 +214,7 @@ struct DepartureCardView : View {
                     }
                     .padding([.bottom], 10.0)
                     
-                    if vm.loadingData == true || vm.depList.isEmpty {
+                    if vm.loadingData == true {
                         VStack(alignment: .leading){
                             Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
                                 .opacity(loadingAnimation ? 0.6 : 1)
@@ -290,25 +297,32 @@ struct DepartureCardView : View {
                         .cornerRadius(12.0)
                         .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
                     }else{
-                        ForEach(vm.depList.enumerated(), id: \.offset) { index, departure in
-                            let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
-                            
-                            if index == vm.depList.endIndex - 1 {
-                                NavigationLink{
-                                    ServiceView(serviceInfo: departure)
-                                } label: {
-                                    TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
-                                        .padding([.top], 5.0)
-                                        .padding([.bottom], 5.0)
-                                }
-                            }else{
-                                NavigationLink {
-                                    ServiceView(serviceInfo: departure)
-                                } label: {
-                                    TrainDepartureCard(id: departure.id, trust_data: trust_data,  tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
-                                        .padding([.top, .bottom], 5.0)
+                        if vm.depList.isEmpty == false {
+                            ForEach(vm.depList.enumerated(), id: \.offset) { index, departure in
+                                let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
+                                
+                                if index == vm.depList.endIndex - 1 {
+                                    NavigationLink{
+                                        ServiceView(serviceInfo: departure)
+                                    } label: {
+                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                            .padding([.top], 5.0)
+                                            .padding([.bottom], 5.0)
+                                    }
+                                }else{
+                                    NavigationLink {
+                                        ServiceView(serviceInfo: departure)
+                                    } label: {
+                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                            .padding([.top, .bottom], 5.0)
+                                    }
                                 }
                             }
+                        }else{
+                            Text("No departures expected for the next two hours.")
+                            .fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(Color.primary)
+
                         }
                     }
                 }
@@ -358,7 +372,7 @@ struct DepartureCardView : View {
         DepartureCardView(style: .list, crs: "MAN", expanded: false)
             .environmentObject(vm)
             .onAppear(){
-                vm.fetchData(crs: "MAN")
+                vm.fetchData(crs: "CTK")
             }
     }.background(Color(red: 242/255, green: 242/255, blue: 247/255))
 }
@@ -371,7 +385,7 @@ struct DepartureCardView : View {
             DepartureCardView(style: .full, crs: "MAN", expanded: true)
                 .environmentObject(vm)
                 .onAppear(){
-                    vm.fetchData(crs: "MAN")
+                    vm.fetchData(crs: "CTK")
                 }
         }
     }

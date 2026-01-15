@@ -137,7 +137,7 @@ func GetLogoOfTOC(code: String) -> ImageResource {
     case TOCs.Southeastern.toc_code:
         return ImageResource(name: "South Eastern", bundle: .main)
     case TOCs.Southern.toc_code:
-        return ImageResource(name: "avanti", bundle: .main)
+        return ImageResource(name: "Southern", bundle: .main)
     case TOCs.LNWR.toc_code:
         return ImageResource(name: "LNWR", bundle: .main)
     case TOCs.WestMidlandsTrains.toc_code:

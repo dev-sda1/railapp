@@ -26,10 +26,12 @@ struct TrainDepartureCard: View {
     var tocCode: String
     var destination: String
     var departureTime: String
+    var estimatedDepartureTime: String
     var platform: String
     var coachNum: Int
     var laterDepartures: [String]
     var delayed: Bool
+    var delayLength: Int
     var cancelled: Bool
     
     func formatTime(timeString: String) -> String {
@@ -71,7 +73,11 @@ struct TrainDepartureCard: View {
                     Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.red).strikethrough()
                 }else{
                     if delayed == true {
-                        Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.orange)
+                        if estimatedDepartureTime != "UNKN" {
+                            Text("\(formatTime(timeString: estimatedDepartureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.orange)
+                        }else{
+                            Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.orange)
+                        }
                     }else{
                         Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.primary)
                     }
@@ -86,22 +92,22 @@ struct TrainDepartureCard: View {
                 if coachNum != 0 {
                     Group{
                         Image(systemName: "train.side.middle.car")
-                            .foregroundStyle(colorScheme == .dark ? Color.white : Color.gray)
+                            .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
                             .frame(width: 13.0, height: 13.0)
                             .padding([.leading], 2.0)
                         Text("\(coachNum) Coaches")
                             .font(.caption)
-                            .foregroundStyle(colorScheme == .dark ? Color.white : Color.gray)
+                            .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
                     }.padding([.leading], 2.0)
                 }else{
                     Group{
                         Image(systemName: "train.side.middle.car")
-                            .foregroundStyle(colorScheme == .dark ? Color.white : Color.gray)
+                            .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
                             .frame(width: 13.0, height: 13.0)
                             .padding([.leading], 2.0)
                         Text("Formation Unknown")
                             .font(.caption)
-                            .foregroundStyle(colorScheme == .dark ? Color.white : Color.gray)
+                            .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
                     }.padding([.leading], 2.0)
                 }
                 
@@ -133,13 +139,24 @@ struct TrainDepartureCard: View {
                     }
                 }else{
                     if delayed == true {
-                        Group{
-                            Image(systemName: "clock.fill")
-                                .foregroundStyle(Color.orange)
-                                .frame(width: 13.0, height: 13.0)
-                            Text("Delayed")
-                                .font(.caption)
-                                .foregroundStyle(Color.orange)
+                        if delayLength > 0 {
+                            Group{
+                                Image(systemName: "clock.fill")
+                                    .foregroundStyle(Color.orange)
+                                    .frame(width: 13.0, height: 13.0)
+                                Text("\(delayLength) min late")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.orange)
+                            }
+                        }else{
+                            Group{
+                                Image(systemName: "clock.fill")
+                                    .foregroundStyle(Color.orange)
+                                    .frame(width: 13.0, height: 13.0)
+                                Text("Delayed")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.orange)
+                            }
                         }
                     }else{
                         Group{
@@ -189,7 +206,7 @@ struct TrainDepartureCard: View {
             
             let trust_data = DepartureTRUSTData(rid: "", uid: "", sdd: "")
             
-            TrainDepartureCard(id: UUID(), trust_data: trust_data, tocCode: "VT", destination: "Liverpool Lime Street", departureTime: "2026-01-10T15:25:00", platform: "7", coachNum: 0, laterDepartures: ["2026-01-10T15:25:00", "2026-01-10T15:25:00", "2026-01-10T15:25:00"], delayed: false, cancelled: true)
+            TrainDepartureCard(id: UUID(), trust_data: trust_data, tocCode: "VT", destination: "Liverpool Lime Street", departureTime: "2026-01-14T22:09:00", estimatedDepartureTime: "2026-01-14T22:32:00", platform: "7", coachNum: 0, laterDepartures: ["2026-01-10T15:25:00", "2026-01-10T15:25:00", "2026-01-10T15:25:00"], delayed: true, delayLength: 25, cancelled: false)
                 .padding([.top], 10.0)
                 .padding([.bottom], 3.0)
             

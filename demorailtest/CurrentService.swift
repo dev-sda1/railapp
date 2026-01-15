@@ -20,7 +20,9 @@ struct CurrentService: View {
         headcode: "1Y66",
         trainLength: 6,
         expectedDeparture: "2026-01-10T14:24:34",
+        estimatedDeparture: "2026-01-10T14:24:34",
         isDelayed: false,
+        delayLength: 0,
         rid: "202601108925258",
         uid: "Y25258",
         sdd: "2026-01-10"

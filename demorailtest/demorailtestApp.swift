@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct demorailtestApp: App {
@@ -13,5 +14,6 @@ struct demorailtestApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: RecentlySearched.self)
     }
 }

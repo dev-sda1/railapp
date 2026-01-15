@@ -184,11 +184,11 @@ struct DepartureList: View {
                                     let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
                                     
                                     if index == vm.depList.endIndex - 1 {
-                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
+                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top], 10.0)
                                             .padding([.bottom], 3.0)
                                     }else{
-                                        TrainDepartureCard(id: departure.id, trust_data: trust_data,  tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
+                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top, .bottom], 10.0)
                                         Divider()
                                     }
@@ -201,7 +201,7 @@ struct DepartureList: View {
                                         NavigationLink{
                                             ServiceView(serviceInfo: departure)
                                         } label: {
-                                            TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
+                                            TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                                 .padding([.top], 10.0)
                                                 .padding([.bottom], 3.0)
                                         }
@@ -209,7 +209,7 @@ struct DepartureList: View {
                                         NavigationLink {
                                             ServiceView(serviceInfo: departure)
                                         } label: {
-                                            TrainDepartureCard(id: departure.id, trust_data: trust_data,  tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, cancelled: departure.cancelled)
+                                            TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                                 .padding([.top, .bottom], 10.0)
                                         }
                                         

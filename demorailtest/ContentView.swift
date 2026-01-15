@@ -8,6 +8,8 @@
 import SwiftUI
 import CoreLocation
 import uk_railway_stations
+import Ifrit
+import SwiftData
 
 struct ContentView: View {
     @State private var selection: TabKey = .live
@@ -174,7 +176,7 @@ struct BottomViewInline: View {
     }
 }
 
-struct NearestStationInfo {
+struct NearestStationInfo: Hashable {
     var stationName: String
     var stationCRS: String
     var distanceTo: Double
@@ -199,8 +201,8 @@ struct SwiftUIView1: View {
     @State private var longitude = 0.0
     @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
     
-//    let urlString = "https://d-railboard.pyxlwuff.dev/station/MAN"
-    let urlString = "http://localhost:3000/station/MAN"
+    let urlString = "https://d-railboard.pyxlwuff.dev/station/MAN"
+//    let urlString = "http://localhost:3000/station/MAN"
     
     struct ScrollOffsetPreferenceKey: PreferenceKey {
         static var defaultValue: CGPoint = .zero
@@ -249,7 +251,7 @@ struct SwiftUIView1: View {
         
         let radius: Double = 5.0 // All stations within 5 Miles
 //        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-        let userLocation = CLLocation(latitude: 51.530637, longitude: -0.123961)
+        let userLocation = CLLocation(latitude: 53.218229, longitude: -2.636667)
         nearestStation = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 1000000.0)
         
         var possibleNearStations: [NearestStationInfo] = []
@@ -382,37 +384,239 @@ struct SwiftUIView2: View {
     }
 }
 
+struct Stations: Searchable {
+    let stationName: String
+    let crsCode: String
+    
+    var properties: [FuseProp] { [stationName,crsCode].map{ FuseProp($0) } }
+}
+
 struct SwiftUIView3: View {
+    struct StationJSONFileEntry : Codable {
+        let stationName: String
+        let lat: Double
+        let long: Double
+        let crsCode: String
+        let constituentCountry: String
+    }
+    
+    struct StationSearchResult: Codable, Hashable{
+        let stationName: String
+        let crsCode: String
+    }
+    
+    @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) var colorScheme
+
+    @Query private var recentlySearchedStations: [RecentlySearched]
+    
+    @State private var stationData: [Stations] = []
+    @State private var searchResults: [StationSearchResult] = []
+    @State private var stationsFile: [StationJSONFileEntry] = []
+    @State private var nearbyStations: [NearestStationInfo] = []
     @State private var searchText = ""
     
-    private let items = [
-        "Item1",
-        "Item2",
-        "Item3",
-        "Item4",
-        "Item5",
-        "Item6",
-        "Item7",
-        "Item8",
-        "Item9",
-        "Item10",
-        "Item11",
-        "Item12",
-    ]
+    @State private var locationAuthorised = false
+    @State private var findingStation = true
+    @State private var latitude = 0.0
+    @State private var longitude = 0.0
+    @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
     
-    private var filteredItems: [String] {
-        if searchText.isEmpty { return items }
-        return items.filter {$0.localizedCaseInsensitiveContains(searchText)}
+    private func getNearbyStations(){
+        let radius: Double = 5.0 // All stations within 5 Miles
+//        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
+        let userLocation = CLLocation(latitude: 51.514266, longitude: -0.303593)
+        
+        var possibleNearStations: [NearestStationInfo] = []
+        
+        stationsFile.enumerated().forEach { index, station in
+            let stationLocation = CLLocation(latitude: station.lat, longitude: station.long)
+            let distanceInMetres = userLocation.distance(from: stationLocation)
+            let distanceInMiles = distanceInMetres * 0.00062137
+
+            if distanceInMiles < radius {
+                print("User is near: \(station.crsCode)")
+//                nearestStation = NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles)
+                possibleNearStations.append(NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles))
+            }
+        }
+        
+        possibleNearStations.sort(by: {$0.distanceTo < $1.distanceTo})
+        
+        nearbyStations = possibleNearStations
+        findingStation = false
+    }
+    
+    private func getNearestStation(){
+        findingStation = true
+        let locManager = CLLocationManager()
+        locManager.requestWhenInUseAuthorization()
+        
+        DispatchQueue.global().async {
+            let url = Bundle.stationsJSONBundleURL
+            guard let data = try? Data(contentsOf: url) else { return }
+            print("Data has been tried successfully")
+            
+            let decoder = JSONDecoder()
+            
+            guard let loadedFile = try? decoder.decode([StationJSONFileEntry].self, from: data) else { return }
+            
+            loadedFile.enumerated().forEach { index, station in
+                let data: Stations = Stations(stationName: station.stationName, crsCode: station.crsCode)
+                stationData.append(data)
+                stationsFile.append(station)
+            }
+
+            
+            if CLLocationManager.locationServicesEnabled(){
+                locationAuthorised = true
+    //            locManager.delegate = self
+                locManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+                locManager.startUpdatingLocation()
+                
+                guard let location: CLLocationCoordinate2D = locManager.location?.coordinate else { return }
+                print(location.latitude)
+                print(location.longitude)
+                latitude = location.latitude
+                longitude = location.longitude
+                                
+                getNearbyStations()
+            }
+        }
+    }
+
+    private var filteredItems: [StationSearchResult] {
+        if(searchText == ""){ // Prevent weird lag spikes by it trying to repeatedly search an empty string.
+            return []
+        }else{
+            let fuse = Fuse()
+            let resultsSync = fuse.searchSync(searchText, in: stationData) { station in
+                    [
+                        FuseProp(station.stationName, weight: 0.3),
+                        FuseProp(station.crsCode, weight: 0.7)
+                    ]
+            }
+            
+            var filteredStations: [StationSearchResult] = []
+            
+            filteredStations = resultsSync.prefix(6).map{ (index, _, matchedRanges) in
+                let stn = stationData[index]
+                
+                return StationSearchResult(stationName: stn.stationName, crsCode: stn.crsCode)
+            }
+            
+            return filteredStations
+
+        }
+        
+//        if searchText.isEmpty { return items }
+//        return items.filter {$0.localizedCaseInsensitiveContains(searchText)}
     }
     
     var body: some View {
         NavigationStack {
-            List(filteredItems, id: \.self) { item in
-                Text(item)
+            GeometryReader { g in
+                ScrollView{
+                    if(searchText == "" && findingStation == false){
+                        VStack(alignment: .leading){
+                            VStack(alignment: .leading){
+                                HStack{
+                                    Image(systemName: "location.fill")
+                                        .foregroundStyle(Color.blue)
+                                    Text("Nearby Stations")
+                                        .font(.title2).bold()
+                                        .frame(alignment: .leading)
+                                        .foregroundStyle(Color.blue)
+                                }
+                                
+                                List {
+                                    ForEach(nearbyStations.prefix(6), id: \.self) {item in
+                                        NavigationLink {
+                                            StationView(crsCode: item.stationCRS, stationName: item.stationName)
+                                        } label: {
+                                            Text("\(item.stationName) (\(item.stationCRS)) - \(String(format: "%.2f", item.distanceTo))mi")
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .foregroundStyle(Color.primary)
+                                                .swipeActions(edge: .trailing){
+                                                    Button(role: .confirm) {
+                                                        
+                                                    } label: {
+                                                        Label("Add to Favourites", systemImage: "star.fill")
+                                                    }
+                                                }
+                                        }
+
+                                    }.listRowBackground(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+                                }
+                                .frame(height: CGFloat((nearbyStations.count * 36) + (nearbyStations.count < 5 ? 200 : 0)), alignment: .top)
+                                .frame(maxWidth: .infinity)
+                                .padding([.trailing, .leading], -16.0)
+                                .scrollContentBackground(.hidden)
+                                .listStyle(.plain)
+
+                            }
+                            .padding()
+                            .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+                            .hoverEffect()
+                            .clipShape(.rect(cornerRadius: 16))
+
+                            
+                            if(recentlySearchedStations.isEmpty == false){
+                                VStack(alignment: .leading){
+                                    Text("Recently Searched")
+                                        .font(.title2).bold()
+                                        .frame(alignment: .leading)
+                                        .foregroundStyle(.primary)
+                                    
+                                    List {
+                                        ForEach(recentlySearchedStations.prefix(5), id: \.self) {searchItem in
+                                            NavigationLink {
+                                                StationView(crsCode: searchItem.station.crsCode, stationName: searchItem.station.stationName)
+                                            } label: {
+                                                Text("\(searchItem.station.stationName) (\(searchItem.station.crsCode))")
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .foregroundStyle(Color.primary)
+                                                    .swipeActions(edge: .trailing){
+                                                        Button(role: .confirm) {
+                                                            
+                                                        } label: {
+                                                            Label("Add to Favourites", systemImage: "star.fill")
+                                                        }
+                                                    }
+                                            }
+                                        }.listRowBackground(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+                                    }
+                                    .frame(height: CGFloat((nearbyStations.count * 30) + (nearbyStations.count < 6 ? 200 : 0)), alignment: .top)
+                                    .frame(maxWidth: .infinity)
+                                    .padding([.trailing, .leading], -16.0)
+                                    .scrollContentBackground(.hidden)
+                                    .listStyle(.plain)
+                                }
+                                .padding()
+                                .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+                                .hoverEffect()
+                                .clipShape(.rect(cornerRadius: 16))
+                                .padding(.top, 15)
+                            }
+
+                        }.padding()
+                    }else{
+                        List(filteredItems, id: \.self) { filtereditem in
+                            NavigationLink {
+                                StationView(crsCode: filtereditem.crsCode, stationName: filtereditem.stationName)
+                            } label: {
+                                Text("\(filtereditem.stationName) (\(filtereditem.crsCode))")
+                            }
+                        }.frame(width: g.size.width, height: g.size.height, alignment: .center)
+                    }
+                }
             }
-            .background(Color(red: 242/255, green: 242/255, blue: 247/255))
             .navigationTitle("Search")
         }
         .searchable(text: $searchText)
+        .onAppear(){
+            print("Opening Station List")
+            getNearestStation()
+        }
     }
 }
