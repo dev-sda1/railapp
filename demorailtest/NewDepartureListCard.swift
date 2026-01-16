@@ -18,8 +18,8 @@ struct DepartureData : Codable {
     let departures: [DepartureItem]
 }
 
-struct DepartureItem: Identifiable, Codable {
-    let id = UUID()
+struct DepartureItem: Codable {
+//    let id = UUID()
     var origin: String
     var destination: String
     var `operator`: String
@@ -63,16 +63,18 @@ class DeparturesViewModel: ObservableObject {
         
         Task {
             self.loadingData = true
-
+            let (data,_) = try await URLSession.shared.data(for: request)
+            let json = try JSONDecoder().decode(DepartureData.self, from: data)
+            
             do {
-                let (data,_) = try await URLSession.shared.data(for: request)
-                let json = try JSONDecoder().decode(DepartureData.self, from: data)
+//                let (data,_) = try await URLSession.shared.data(for: request)
+//                let json = try JSONDecoder().decode(DepartureData.self, from: data)
                 self.depList = json.departures
                 self.lastUpdated = Date.now.formatted(date: .omitted, time: .shortened)
             } catch{
-                print(error.localizedDescription)
+                print(error)
             }
-            
+                        
             print("Latest fetch complete")
             self.loadingData = false
         }
@@ -93,6 +95,7 @@ struct DepartureCardView : View {
     @State var crs: String
     @State var expanded: Bool
     @EnvironmentObject var vm: DeparturesViewModel
+    @EnvironmentObject var service_vm: ServiceViewModel
     
     @State private var locationAuthorised = false
     @State private var findingStation = true
@@ -179,11 +182,11 @@ struct DepartureCardView : View {
                             let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
                             
                             if index == vm.depList.endIndex - 1 {
-                                TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                     .padding([.top], 5.0)
                                     .padding([.bottom], 3.0)
                             }else{
-                                TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                             }
                         }
                     }else{
@@ -304,16 +307,18 @@ struct DepartureCardView : View {
                                 if index == vm.depList.endIndex - 1 {
                                     NavigationLink{
                                         ServiceView(serviceInfo: departure)
+                                            .environmentObject(service_vm)
                                     } label: {
-                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                        TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top], 5.0)
                                             .padding([.bottom], 5.0)
                                     }
                                 }else{
                                     NavigationLink {
                                         ServiceView(serviceInfo: departure)
+                                            .environmentObject(service_vm)
                                     } label: {
-                                        TrainDepartureCard(id: departure.id, trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+                                        TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top, .bottom], 5.0)
                                     }
                                 }
@@ -369,10 +374,10 @@ struct DepartureCardView : View {
     @Previewable @StateObject var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
 
     ScrollView {
-        DepartureCardView(style: .list, crs: "MAN", expanded: false)
+        DepartureCardView(style: .list, crs: "EUS", expanded: false)
             .environmentObject(vm)
             .onAppear(){
-                vm.fetchData(crs: "CTK")
+                vm.fetchData(crs: "EUS")
             }
     }.background(Color(red: 242/255, green: 242/255, blue: 247/255))
 }
@@ -385,7 +390,7 @@ struct DepartureCardView : View {
             DepartureCardView(style: .full, crs: "MAN", expanded: true)
                 .environmentObject(vm)
                 .onAppear(){
-                    vm.fetchData(crs: "CTK")
+                    vm.fetchData(crs: "MAN")
                 }
         }
     }

@@ -27,6 +27,7 @@ struct StationView: View {
     @State private var fullyExpanded = false
     @State private var safeFrame: CGRect = .zero
     @StateObject private var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
+    @StateObject private var service_vm = ServiceViewModel(service: fake_service, errValue: false, loadingData: false)
     @State private var layoutID = UUID()
     var crsCode: String
     var stationName: String
@@ -52,7 +53,7 @@ struct StationView: View {
         let item = RecentlySearched(station_info: station)
         var already_searched_recently = false
         
-        recentlySearchedStations.prefix(5).enumerated().forEach{ index, list in
+        recentlySearchedStations.prefix(6).enumerated().forEach{ index, list in
             if(item.station.crsCode == list.station.crsCode){
                 context.delete(list)
                 context.insert(item)
@@ -64,6 +65,11 @@ struct StationView: View {
         if(already_searched_recently == false){
             context.insert(item)
             print("Inserted item for first time.")
+        }
+        
+        if(recentlySearchedStations.count > 6){
+            guard let bottom_item_index = recentlySearchedStations.last else { return }
+            context.delete(bottom_item_index)
         }
     }
         
@@ -96,11 +102,13 @@ struct StationView: View {
                             DepartureCardView(style: .full, crs: crsCode, expanded: true)
                                 .navigationTransition(.zoom(sourceID: "card", in: stnCardNamespace))
                                 .environmentObject(vm)
+                                .environmentObject(service_vm)
                                 .zIndex(100)
                                 
                         } label: {
                             DepartureCardView(style: .list, crs: crsCode, expanded: false)
                                 .environmentObject(vm)
+                                .environmentObject(service_vm)
                         }
                         .matchedTransitionSource(id: "card", in: stnCardNamespace)
                         .buttonStyle(ScaledButtonStyle())

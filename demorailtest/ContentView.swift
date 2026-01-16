@@ -32,9 +32,10 @@ struct ContentView: View {
         }
         
         .tabBarMinimizeBehavior(.onScrollDown)
-        .tabViewBottomAccessory {
-            BottomAccessoryView()
-        }
+        // TODO: Come back to tabViewBottomAccessory at a later date.
+//        .tabViewBottomAccessory {
+//            BottomAccessoryView()
+//        }
     }
 }
 
@@ -193,6 +194,7 @@ struct SwiftUIView1: View {
     @State private var fullyExpanded = false
     @State private var safeFrame: CGRect = .zero
     @StateObject private var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
+    @StateObject private var service_vm = ServiceViewModel(service: fake_service, errValue: false, loadingData: false)
     @State private var layoutID = UUID()
     
     @State private var locationAuthorised = false
@@ -250,8 +252,8 @@ struct SwiftUIView1: View {
         guard let loadedFile = try? decoder.decode([StationJSONFileEntry].self, from: data) else { return }
         
         let radius: Double = 5.0 // All stations within 5 Miles
-//        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-        let userLocation = CLLocation(latitude: 53.218229, longitude: -2.636667)
+        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
+//        let userLocation = CLLocation(latitude: 53.218229, longitude: -2.636667)
         nearestStation = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 1000000.0)
         
         var possibleNearStations: [NearestStationInfo] = []
@@ -334,11 +336,13 @@ struct SwiftUIView1: View {
                                     DepartureCardView(style: .full, crs: nearestStation.stationCRS, expanded: true)
                                         .navigationTransition(.zoom(sourceID: "card", in: cardNamespace))
                                         .environmentObject(vm)
+                                        .environmentObject(service_vm)
                                         .zIndex(100)
                                         
                                 } label: {
                                     DepartureCardView(style: .list, crs: nearestStation.stationCRS, expanded: false)
                                         .environmentObject(vm)
+                                        .environmentObject(service_vm)
                                 }
                                 .matchedTransitionSource(id: "card", in: cardNamespace)
                                 .buttonStyle(ScaledButtonStyle())
@@ -408,13 +412,15 @@ struct SwiftUIView3: View {
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) var colorScheme
 
-    @Query private var recentlySearchedStations: [RecentlySearched]
+    @Query private var recentSearchedQuery: [RecentlySearched]
+    @State private var recentlySearchedStations: [RecentlySearched] = []
     
     @State private var stationData: [Stations] = []
     @State private var searchResults: [StationSearchResult] = []
     @State private var stationsFile: [StationJSONFileEntry] = []
     @State private var nearbyStations: [NearestStationInfo] = []
     @State private var searchText = ""
+    @State private var locating = false
     
     @State private var locationAuthorised = false
     @State private var findingStation = true
@@ -423,9 +429,13 @@ struct SwiftUIView3: View {
     @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
     
     private func getNearbyStations(){
+        guard !locating else { return }
+
+        locating = true
+        nearbyStations = [];
         let radius: Double = 5.0 // All stations within 5 Miles
-//        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-        let userLocation = CLLocation(latitude: 51.514266, longitude: -0.303593)
+        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
+//        let userLocation = CLLocation(latitude: 51.514266, longitude: -0.303593)
         
         var possibleNearStations: [NearestStationInfo] = []
         
@@ -435,16 +445,28 @@ struct SwiftUIView3: View {
             let distanceInMiles = distanceInMetres * 0.00062137
 
             if distanceInMiles < radius {
-                print("User is near: \(station.crsCode)")
+                var duplicate = false
+//                print("User is near: \(station.crsCode)")
 //                nearestStation = NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles)
-                possibleNearStations.append(NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles))
+                
+                // Very very rough workaround for weird duplicate results in the nearby stations list.
+                possibleNearStations.forEach{ possibleDuplicate in
+                    if(possibleDuplicate.stationCRS == station.crsCode){
+                        duplicate = true
+                    }
+                }
+                
+                if duplicate == false {
+                    possibleNearStations.append(NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles))
+                }
             }
         }
         
         possibleNearStations.sort(by: {$0.distanceTo < $1.distanceTo})
         
-        nearbyStations = possibleNearStations
+        nearbyStations = Array(possibleNearStations.prefix(6))
         findingStation = false
+        locating = false
     }
     
     private func getNearestStation(){
@@ -492,8 +514,8 @@ struct SwiftUIView3: View {
             let fuse = Fuse()
             let resultsSync = fuse.searchSync(searchText, in: stationData) { station in
                     [
-                        FuseProp(station.stationName, weight: 0.3),
-                        FuseProp(station.crsCode, weight: 0.7)
+                        FuseProp(station.stationName, weight: 0.18),
+                        FuseProp(station.crsCode, weight: 0.82)
                     ]
             }
             
@@ -505,9 +527,10 @@ struct SwiftUIView3: View {
                 return StationSearchResult(stationName: stn.stationName, crsCode: stn.crsCode)
             }
             
-            return filteredStations
+            return Array(filteredStations.prefix(5))
 
         }
+        
         
 //        if searchText.isEmpty { return items }
 //        return items.filter {$0.localizedCaseInsensitiveContains(searchText)}
@@ -548,8 +571,7 @@ struct SwiftUIView3: View {
 
                                     }.listRowBackground(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
                                 }
-                                .frame(height: CGFloat((nearbyStations.count * 36) + (nearbyStations.count < 5 ? 200 : 0)), alignment: .top)
-                                .frame(maxWidth: .infinity)
+                                .frame(height: CGFloat((nearbyStations.count * 53)), alignment: .top)
                                 .padding([.trailing, .leading], -16.0)
                                 .scrollContentBackground(.hidden)
                                 .listStyle(.plain)
@@ -569,7 +591,7 @@ struct SwiftUIView3: View {
                                         .foregroundStyle(.primary)
                                     
                                     List {
-                                        ForEach(recentlySearchedStations.prefix(5), id: \.self) {searchItem in
+                                        ForEach(recentlySearchedStations.prefix(6), id: \.self) {searchItem in
                                             NavigationLink {
                                                 StationView(crsCode: searchItem.station.crsCode, stationName: searchItem.station.stationName)
                                             } label: {
@@ -586,7 +608,7 @@ struct SwiftUIView3: View {
                                             }
                                         }.listRowBackground(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
                                     }
-                                    .frame(height: CGFloat((nearbyStations.count * 30) + (nearbyStations.count < 6 ? 200 : 0)), alignment: .top)
+                                    .frame(height: CGFloat((recentlySearchedStations.count * 53)), alignment: .top)
                                     .frame(maxWidth: .infinity)
                                     .padding([.trailing, .leading], -16.0)
                                     .scrollContentBackground(.hidden)
@@ -616,6 +638,7 @@ struct SwiftUIView3: View {
         .searchable(text: $searchText)
         .onAppear(){
             print("Opening Station List")
+            recentlySearchedStations = Array(recentSearchedQuery.prefix(6))
             getNearestStation()
         }
     }
