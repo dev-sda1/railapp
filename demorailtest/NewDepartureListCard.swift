@@ -71,8 +71,8 @@ class DeparturesViewModel: ObservableObject {
     
     @MainActor
     func fetchData(crs: String){
-//        let urlString = "https://d-railboard.pyxlwuff.dev/station/\(crs)"
-        let urlString = "http://localhost:3000/station/\(crs)"
+        let urlString = "https://d-railboard.pyxlwuff.dev/station/\(crs)"
+//        let urlString = "http://localhost:3000/station/\(crs)"
 
         guard !loadingData else { return }
         print("woof")

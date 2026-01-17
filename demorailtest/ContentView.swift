@@ -203,8 +203,8 @@ struct SwiftUIView1: View {
     @State private var longitude = 0.0
     @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
     
-//    let urlString = "https://d-railboard.pyxlwuff.dev/station/MAN"
-    let urlString = "http://localhost:3000/station/MAN"
+    let urlString = "https://d-railboard.pyxlwuff.dev/station/MAN"
+//    let urlString = "http://localhost:3000/station/MAN"
     
     struct ScrollOffsetPreferenceKey: PreferenceKey {
         static var defaultValue: CGPoint = .zero
@@ -252,8 +252,8 @@ struct SwiftUIView1: View {
         guard let loadedFile = try? decoder.decode([StationJSONFileEntry].self, from: data) else { return }
         
         let radius: Double = 5.0 // All stations within 5 Miles
-//        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-        let userLocation = CLLocation(latitude: 51.514659, longitude: -0.101186)
+        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
+//        let userLocation = CLLocation(latitude: 51.514659, longitude: -0.101186)
         nearestStation = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 1000000.0)
         
         var possibleNearStations: [NearestStationInfo] = []

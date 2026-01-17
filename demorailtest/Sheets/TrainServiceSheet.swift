@@ -63,8 +63,8 @@ struct TrainServiceSheet: View {
     }
     
     func fetchData(uid: String, sdd: String){
-//        let urlString = "https://d-railboard.pyxlwuff.dev/service/\(uid)/\(sdd)/standard"
-        let urlString = "http://localhost:3000/service/\(uid)/\(sdd)/standard"
+        let urlString = "https://d-railboard.pyxlwuff.dev/service/\(uid)/\(sdd)/standard"
+//        let urlString = "http://localhost:3000/service/\(uid)/\(sdd)/standard"
         
         guard !fetchingServiceData else { return }
         var request = URLRequest(url: URL(string: urlString)!)
@@ -189,8 +189,8 @@ struct TrainServiceSheet: View {
                                 if serviceData.journey.first?.crs == stop.crs {
                                     HStack{
                                         VStack(alignment: .center){
-                                            Circle().frame(width: 15, height: 15).offset(x: 0, y: 3)
-                                            Rectangle().frame(width: 4, height: 58).offset(x: 0, y: -12)
+                                            Circle().frame(width: 15, height: 15).offset(x: 0, y: 3).foregroundStyle(stop.atd ?? "" != "" ? Color.gray : Color.black)
+                                            Rectangle().frame(width: 4, height: 58).offset(x: 0, y: -12).foregroundStyle(stop.atd ?? "" != "" ? Color.gray : Color.black)
                                         }
                                         
                                         VStack(alignment: .leading){
@@ -333,8 +333,8 @@ struct TrainServiceSheet: View {
                                     }else{
                                         HStack{
                                             VStack(alignment: .center){
-                                                Circle().overlay(Circle().stroke(.black, lineWidth: 4)).frame(width: 15, height: 15).offset(x: 0, y: -14).foregroundStyle(.clear)
-                                                Rectangle().frame(width: 4, height: 50).offset(x: 0, y: -23)
+                                                Circle().overlay(Circle().stroke(stop.atd ?? "" != "" ? Color.gray : Color.black, lineWidth: 4)).frame(width: 15, height: 15).offset(x: 0, y: -14).foregroundStyle(.clear)
+                                                Rectangle().frame(width: 4, height: 50).offset(x: 0, y: -23).foregroundStyle(stop.atd ?? "" != "" ? Color.gray : Color.black)
                                             }
                                             
                                             VStack(alignment: .leading){
