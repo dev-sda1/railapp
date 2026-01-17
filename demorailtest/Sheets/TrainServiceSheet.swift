@@ -492,8 +492,6 @@ struct TrainServiceSheet: View {
                 .padding(.top, 20)
             }
             
-            
-            Spacer()
         }.onAppear() {
             fetchData(uid: currentDeparture.uid, sdd: currentDeparture.sdd)
         }
