@@ -29,7 +29,7 @@ struct TrainDepartureCard: View {
     var estimatedDepartureTime: String
     var platform: String
     var coachNum: Int
-    var laterDepartures: [String]
+    var laterDepartures: [DepartureItem]
     var delayed: Bool
     var delayLength: Int
     var cancelled: Bool
@@ -47,7 +47,7 @@ struct TrainDepartureCard: View {
         return date
     }
     
-    func formatAdditionalDepartures(deplist: [String]) -> String {
+    func formatAdditionalDepartures(deplist: [DepartureItem]) -> String {
         var res = ""
         
         if deplist.count == 0 {
@@ -55,11 +55,20 @@ struct TrainDepartureCard: View {
         }
             
         laterDepartures.prefix(3).enumerated().forEach { index, departure in
-            if index == laterDepartures.prefix(3).endIndex - 1 {
-                res += "\(formatTime(timeString: departure))"
+            if departure.estimatedDeparture != "" || departure.estimatedDeparture != "UNKN" {
+                if index == laterDepartures.prefix(3).endIndex - 1 {
+                    res += "\(formatTime(timeString: departure.estimatedDeparture ?? "00:00"))"
+                }else{
+                    res += "\(formatTime(timeString: departure.estimatedDeparture ?? "00:00")), "
+                }
             }else{
-                res += "\(formatTime(timeString: departure)), "
+                if index == laterDepartures.prefix(3).endIndex - 1 {
+                    res += "\(formatTime(timeString: departure.expectedDeparture))"
+                }else{
+                    res += "\(formatTime(timeString: departure.expectedDeparture)), "
+                }
             }
+            
         }
         
         return res
@@ -213,7 +222,7 @@ struct TrainDepartureCard: View {
             
             let trust_data = DepartureTRUSTData(rid: "", uid: "", sdd: "")
             
-            TrainDepartureCard(trust_data: trust_data, tocCode: "VT", destination: "Liverpool Lime Street", departureTime: "2026-01-14T22:09:00", estimatedDepartureTime: "2026-01-14T03:32:00", platform: "7", coachNum: 10, laterDepartures: ["2026-01-10T15:25:00", "2026-01-10T15:25:00", "2026-01-10T15:25:00"], delayed: true, delayLength: 25, cancelled: false)
+            TrainDepartureCard(trust_data: trust_data, tocCode: "VT", destination: "Liverpool Lime Street", departureTime: "2026-01-14T22:09:00", estimatedDepartureTime: "2026-01-14T03:32:00", platform: "7", coachNum: 10, laterDepartures: [fake_departure_item, fake_departure_item,fake_departure_item], delayed: true, delayLength: 25, cancelled: false)
                 .padding([.top], 10.0)
                 .padding([.bottom], 3.0)
             

@@ -11,6 +11,24 @@ internal import Combine
 import CoreLocation
 import uk_railway_stations
 
+let fake_departure_item = DepartureItem(
+    origin: "Bedford",
+    destination: "East Croydon",
+    operator: "Thameslink",
+    operatorCode: "TL",
+    cancelled: false,
+    headcode: "9T31",
+    platformNo: "2",
+    trainLength: 6,
+    expectedDeparture: "2026-01-17T12:56:00",
+    estimatedDeparture: "2026-01-17T12:56:00",
+    isDelayed: false,
+    delayLength: 0,
+    rid: "202601178757929",
+    uid: "W57929",
+    sdd: "2026-01-17"
+)
+
 struct DepartureData : Codable {
     let locationName: String
     let generatedAt: String
@@ -18,15 +36,15 @@ struct DepartureData : Codable {
     let departures: [DepartureItem]
 }
 
-struct DepartureItem: Codable {
-//    let id = UUID()
+struct DepartureItem: Codable, Identifiable {
+    let id = UUID()
     var origin: String
     var destination: String
     var `operator`: String
     var operatorCode: String
     var cancelled: Bool
     var headcode: String
-    var additionalServices: [String]? = []
+    var additionalServices: [DepartureItem]? = []
     var platformNo: String? = "Unknown"
     var trainLength: Int
     var expectedDeparture: String
@@ -53,8 +71,8 @@ class DeparturesViewModel: ObservableObject {
     
     @MainActor
     func fetchData(crs: String){
-        let urlString = "https://d-railboard.pyxlwuff.dev/station/\(crs)"
-//        let urlString = "http://localhost:3000/station/\(crs)"
+//        let urlString = "https://d-railboard.pyxlwuff.dev/station/\(crs)"
+        let urlString = "http://localhost:3000/station/\(crs)"
 
         guard !loadingData else { return }
         print("woof")
@@ -104,12 +122,30 @@ struct DepartureCardView : View {
     @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
     @State private var loadingAnimation = false
     
+    // Service Sheet Stuff
+    @State private var showServiceSheet = false
+    @State private var serviceSheetData: DepartureItem = fake_departure_item
+    @State private var serviceSheetTRUSTData: DepartureTRUSTData = DepartureTRUSTData(rid: "", uid: "", sdd: "")
+    
     struct StationJSONFileEntry : Codable {
         let stationName: String
         let lat: Double
         let long: Double
         let crsCode: String
         let constituentCountry: String
+    }
+    
+    func formatTime(timeString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
+        
+        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened) ?? "00:00"
+        if date.count == 4 {
+            date = "0\(date)"
+        }
+        //        print("\(formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened))")
+        
+        return date
     }
     
     var body: some View {
@@ -305,22 +341,61 @@ struct DepartureCardView : View {
                                 let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
                                 
                                 if index == vm.depList.endIndex - 1 {
-                                    NavigationLink{
-                                        ServiceView(serviceInfo: departure)
-                                            .environmentObject(service_vm)
+                                    Button {
+                                        var temp_dep = departure
+                                        
+                                        let temp: DepartureItem = DepartureItem(origin: departure.origin, destination: departure.destination, operator: departure.operator, operatorCode: departure.operatorCode, cancelled: departure.cancelled, headcode: departure.headcode, trainLength: departure.trainLength, expectedDeparture: departure.expectedDeparture, estimatedDeparture: departure.estimatedDeparture ?? "UNKN", isDelayed: departure.isDelayed, delayLength: departure.delayLength, rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
+                                        
+                                        temp_dep.additionalServices?.insert(temp, at: 0)
+                                        
+                                        serviceSheetData = temp_dep
+                                        
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                            showServiceSheet.toggle()
+                                        }
+                                        
                                     } label: {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top], 5.0)
                                             .padding([.bottom], 5.0)
                                     }
+//                                    NavigationLink{
+//                                        ServiceView(serviceInfo: departure)
+//                                            .environmentObject(service_vm)
+//                                    } label: {
+//                                        TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+//                                            .padding([.top], 5.0)
+//                                            .padding([.bottom], 5.0)
+//                                    }
                                 }else{
-                                    NavigationLink {
-                                        ServiceView(serviceInfo: departure)
-                                            .environmentObject(service_vm)
+                                    Button {
+                                        var temp_dep = departure
+                                        
+                                        let temp: DepartureItem = DepartureItem(origin: departure.origin, destination: departure.destination, operator: departure.operator, operatorCode: departure.operatorCode, cancelled: departure.cancelled, headcode: departure.headcode, trainLength: departure.trainLength, expectedDeparture: departure.expectedDeparture, estimatedDeparture: departure.estimatedDeparture ?? "UNKN", isDelayed: departure.isDelayed, delayLength: departure.delayLength, rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
+                                        
+                                        temp_dep.additionalServices?.insert(temp, at: 0)
+                                        
+                                        serviceSheetData = temp_dep
+                                        
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                            showServiceSheet.toggle()
+                                        }
+
                                     } label: {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
-                                            .padding([.top, .bottom], 5.0)
+                                            .padding([.top], 5.0)
+                                            .padding([.bottom], 5.0)
                                     }
+                                    
+                                    
+                                    
+//                                    NavigationLink {
+//                                        ServiceView(serviceInfo: departure)
+//                                            .environmentObject(service_vm)
+//                                    } label: {
+//                                        TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
+//                                            .padding([.top, .bottom], 5.0)
+//                                    }
                                 }
                             }
                         }else{
@@ -333,6 +408,18 @@ struct DepartureCardView : View {
                 }
                 .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
                 .padding()
+                .sheet(isPresented: $showServiceSheet) {
+                    NavigationStack{
+                        TrainServiceSheet(currentDeparture: serviceSheetData, laterDepartures: serviceSheetData.additionalServices ?? [])
+                        .toolbar {
+                            Button(role: .close) {
+                                showServiceSheet = false
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium, .large])
+                }
+                
             }
             .overlay {
                 ZStack(alignment: .topTrailing){
@@ -372,10 +459,12 @@ struct DepartureCardView : View {
 
 #Preview("List Style") {
     @Previewable @StateObject var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
+    @Previewable @StateObject var service_vm = ServiceViewModel(service: fake_service, errValue: false, loadingData: false)
 
     ScrollView {
         DepartureCardView(style: .list, crs: "EUS", expanded: false)
             .environmentObject(vm)
+            .environmentObject(service_vm)
             .onAppear(){
                 vm.fetchData(crs: "EUS")
             }
@@ -384,11 +473,13 @@ struct DepartureCardView : View {
 
 #Preview("Detail Style"){
     @Previewable @StateObject var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
+    @Previewable @StateObject var service_vm = ServiceViewModel(service: fake_service, errValue: false, loadingData: false)
 
     NavigationStack{
         ScrollView{
             DepartureCardView(style: .full, crs: "MAN", expanded: true)
                 .environmentObject(vm)
+                .environmentObject(service_vm)
                 .onAppear(){
                     vm.fetchData(crs: "MAN")
                 }

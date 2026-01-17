@@ -35,35 +35,6 @@ struct CurrentService: View {
     }
 }
 
-struct CurrentServiceAPIError: Codable {
-    var error: String
-}
-
-struct JourneyArraySchema: Codable {
-    var locationName: String
-    var crs: String
-    var isPass: Bool
-    var isCancelled: Bool
-    var platform: String? = "Unknown"
-    var std: String? = ""
-    var etd: String? = ""
-    var atd: String? = ""
-    var sta: String? = ""
-    var eta: String? = ""
-    var ata: String? = ""
-    var lateness: Int? = 0
-}
-
-struct CurrentServiceAPIResult: Codable {
-    var headcode: String
-    var `operator`: String
-    var operatorCode: String
-    var origin: String
-    var destination: String
-    var cancelled: Bool
-    var cancelReason: String? = ""
-    var journey: [JourneyArraySchema]
-}
 
 let fake_service: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: false, journey: [])
 
