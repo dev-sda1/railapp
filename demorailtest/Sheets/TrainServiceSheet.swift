@@ -41,7 +41,7 @@ struct CurrentServiceAPIResult: Codable {
 
 struct TrainServiceSheet: View {
     @Environment(\.colorScheme) var colorScheme
-    @State private var serviceData: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: true, cancelReason: "This train has been cancelled due to an unusually large passenger", journey: [])
+    @State private var serviceData: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: true, cancelReason: "", journey: [])
     @State private var fetchingServiceData = false
     @State private var refreshingData = false
     
@@ -51,15 +51,22 @@ struct TrainServiceSheet: View {
     func formatTime(timeString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened) ?? "00:00"
+        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
         if date.count == 4 {
             date = "0\(date)"
         }
         
-        //        print("\(formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened))")
+        var formatted = ""
         
-        return date
+        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
+        }else{
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
+        }
+                
+        return formatted
     }
     
     func fetchData(uid: String, sdd: String){
@@ -127,19 +134,20 @@ struct TrainServiceSheet: View {
                                             if laterService.cancelled {
                                                 Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().strikethrough().foregroundStyle(Color.red)
                                                 Text("Cancelled").foregroundStyle(Color.red)
-                                            }
-                                            
-                                            if laterService.isDelayed {
-                                                if laterService.delayLength > 0 {
-                                                    Text("\(formatTime(timeString: laterService.estimatedDeparture ?? "00:00"))").font(.title3).bold().foregroundStyle(Color.orange)
-                                                    Text("Delayed \(laterService.delayLength)min").foregroundStyle(Color.orange)
-                                                }else{
-                                                    Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.orange)
-                                                    Text("Delayed").foregroundStyle(Color.orange)
-                                                }
                                             }else{
-                                                Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.primary)
-                                                Text("On Time").foregroundStyle(Color.green)
+                                                if laterService.isDelayed {
+                                                    if laterService.delayLength > 0 {
+                                                        Text("\(formatTime(timeString: laterService.estimatedDeparture ?? "00:00"))").font(.title3).bold().foregroundStyle(Color.orange)
+                                                        Text("Delayed \(laterService.delayLength)min").foregroundStyle(Color.orange)
+                                                    }else{
+                                                        Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.orange)
+                                                        Text("Delayed").foregroundStyle(Color.orange)
+                                                    }
+                                                }else{
+                                                    Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.primary)
+                                                    Text("On Time").foregroundStyle(Color.green)
+                                                }
+
                                             }
                                         }
                                         .padding()
@@ -181,7 +189,7 @@ struct TrainServiceSheet: View {
 
                 
                 VStack{
-                    Text("Stops").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
+                    Text("Calling Points").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
                     
                     VStack{
                         VStack(alignment: .center){
@@ -203,23 +211,23 @@ struct TrainServiceSheet: View {
                                                     Text("Cancelled")
                                                         .font(.caption)
                                                         .foregroundStyle(Color.red)
-                                                }
-                                                
-                                                if stop.lateness ?? 0 > 0 {
-                                                    Image(systemName: "clock.fill")
-                                                        .foregroundStyle(Color.orange)
-                                                        .frame(width: 13.0, height: 13.0)
-                                                    Text("\(stop.lateness ?? 0)min late")
-                                                        .font(.caption)
-                                                        .foregroundStyle(Color.orange)
                                                 }else{
-                                                    Image(systemName: "clock.fill")
-                                                        .foregroundStyle(Color.green)
-                                                        .frame(width: 13.0, height: 13.0)
-                                                    Text("On Time")
-                                                        .font(.caption)
-                                                        .foregroundStyle(Color.green)
+                                                    if stop.lateness ?? 0 > 0 {
+                                                        Image(systemName: "clock.fill")
+                                                            .foregroundStyle(Color.orange)
+                                                            .frame(width: 13.0, height: 13.0)
+                                                        Text("\(stop.lateness ?? 0)min late")
+                                                            .font(.caption)
+                                                            .foregroundStyle(Color.orange)
+                                                    }else{
+                                                        Image(systemName: "clock.fill")
+                                                            .foregroundStyle(Color.green)
+                                                            .frame(width: 13.0, height: 13.0)
+                                                        Text("On Time")
+                                                            .font(.caption)
+                                                            .foregroundStyle(Color.green)
 
+                                                    }
                                                 }
                                                 
                                             }.padding(.top, -5)
@@ -233,25 +241,25 @@ struct TrainServiceSheet: View {
                                                 .foregroundStyle(Color.red)
                                                 .strikethrough()
                                                 .frame(maxWidth: .infinity, alignment: .trailing)
-                                            }
-                                            
-                                            if stop.lateness ?? 0 > 0 {
-                                                if stop.etd ?? "" != "" || stop.etd ?? "" != "UNKN" {
-                                                    Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
-                                                    .font(.headline).bold()
-                                                    .foregroundStyle(Color.orange)
-                                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                            }else{
+                                                if stop.lateness ?? 0 > 0 {
+                                                    if stop.etd ?? "" != "" || stop.etd ?? "" != "UNKN" {
+                                                        Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
+                                                        .font(.headline).bold()
+                                                        .foregroundStyle(Color.orange)
+                                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                                    }else{
+                                                        Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                        .font(.headline).bold()
+                                                        .foregroundStyle(Color.orange)
+                                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                                    }
                                                 }else{
                                                     Text("\(formatTime(timeString: stop.std ?? "00:00"))")
                                                     .font(.headline).bold()
-                                                    .foregroundStyle(Color.orange)
+                                                    .foregroundStyle(Color.primary)
                                                     .frame(maxWidth: .infinity, alignment: .trailing)
                                                 }
-                                            }else{
-                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
-                                                .font(.headline).bold()
-                                                .foregroundStyle(Color.primary)
-                                                .frame(maxWidth: .infinity, alignment: .trailing)
                                             }
                                             
                                             Spacer()
@@ -275,23 +283,23 @@ struct TrainServiceSheet: View {
                                                         Text("Cancelled")
                                                             .font(.caption)
                                                             .foregroundStyle(Color.red)
-                                                    }
-                                                    
-                                                    if stop.lateness ?? 0 > 0 {
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.orange)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("\(stop.lateness ?? 0)min late")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.orange)
                                                     }else{
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.green)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("On Time")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.green)
-
+                                                        if stop.lateness ?? 0 > 0 {
+                                                            Image(systemName: "clock.fill")
+                                                                .foregroundStyle(Color.orange)
+                                                                .frame(width: 13.0, height: 13.0)
+                                                            Text("\(stop.lateness ?? 0)min late")
+                                                                .font(.caption)
+                                                                .foregroundStyle(Color.orange)
+                                                        }else{
+                                                            Image(systemName: "clock.fill")
+                                                                .foregroundStyle(Color.green)
+                                                                .frame(width: 13.0, height: 13.0)
+                                                            Text("On Time")
+                                                                .font(.caption)
+                                                                .foregroundStyle(Color.green)
+                                                        }
+                                                        
                                                     }
                                                     
                                                 }.padding(.top, -5)
@@ -306,25 +314,25 @@ struct TrainServiceSheet: View {
                                                     .foregroundStyle(Color.red)
                                                     .strikethrough()
                                                     .frame(maxWidth: .infinity, alignment: .trailing)
-                                                }
-                                                
-                                                if stop.lateness ?? 0 > 0 {
-                                                    if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
-                                                        Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
-                                                        .font(.headline).bold()
-                                                        .foregroundStyle(Color.orange)
-                                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                                }else{
+                                                    if stop.lateness ?? 0 > 0 {
+                                                        if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
+                                                            Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
+                                                            .font(.headline).bold()
+                                                            .foregroundStyle(Color.orange)
+                                                            .frame(maxWidth: .infinity, alignment: .trailing)
+                                                        }else{
+                                                            Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                            .font(.headline).bold()
+                                                            .foregroundStyle(Color.orange)
+                                                            .frame(maxWidth: .infinity, alignment: .trailing)
+                                                        }
                                                     }else{
                                                         Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
                                                         .font(.headline).bold()
-                                                        .foregroundStyle(Color.orange)
+                                                        .foregroundStyle(Color.primary)
                                                         .frame(maxWidth: .infinity, alignment: .trailing)
                                                     }
-                                                }else{
-                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                    .font(.headline).bold()
-                                                    .foregroundStyle(Color.primary)
-                                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                                 }
                                             }
                                             .padding(.top, -17)
@@ -379,30 +387,30 @@ struct TrainServiceSheet: View {
                                                     .frame(maxWidth: 50, alignment: .trailing)
                                                     Spacer()
 
-                                                }
-                                                
-                                                if stop.lateness ?? 0 > 0 {
-                                                    if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
-                                                        Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
-                                                        .font(.headline).bold()
-                                                        .foregroundStyle(Color.orange)
-                                                        .frame(maxWidth: 50, alignment: .trailing)
-                                                        Spacer()
+                                                }else{
+                                                    if stop.lateness ?? 0 > 0 {
+                                                        if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
+                                                            Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
+                                                            .font(.headline).bold()
+                                                            .foregroundStyle(Color.orange)
+                                                            .frame(maxWidth: 50, alignment: .trailing)
+                                                            Spacer()
 
+                                                        }else{
+                                                            Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                            .font(.headline).bold()
+                                                            .foregroundStyle(Color.orange)
+                                                            .frame(maxWidth: 50, alignment: .trailing)
+                                                            Spacer()
+
+                                                        }
                                                     }else{
                                                         Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
                                                         .font(.headline).bold()
-                                                        .foregroundStyle(Color.orange)
+                                                        .foregroundStyle(Color.primary)
                                                         .frame(maxWidth: 50, alignment: .trailing)
                                                         Spacer()
-
                                                     }
-                                                }else{
-                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                    .font(.headline).bold()
-                                                    .foregroundStyle(Color.primary)
-                                                    .frame(maxWidth: 50, alignment: .trailing)
-                                                    Spacer()
                                                 }
                                             }
                                             .padding(.top, -17)
@@ -503,5 +511,5 @@ struct TrainServiceSheet: View {
 
     
     
-    TrainServiceSheet(currentDeparture: fake_departure_item, laterDepartures: [fake_departure_item, fake_departure_item, fake_departure_item, fake_departure_item, fake_departure_item, fake_departure_item])
+    TrainServiceSheet(currentDeparture: empty_departure_item, laterDepartures: [])
 }

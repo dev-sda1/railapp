@@ -113,14 +113,22 @@ struct ServiceView: View {
     func formatTime(timeString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened) ?? "00:00"
+        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
         if date.count == 4 {
             date = "0\(date)"
         }
-        //        print("\(formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened))")
         
-        return date
+        var formatted = ""
+        
+        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
+        }else{
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
+        }
+                
+        return formatted
     }
                 
     var body: some View {

@@ -29,6 +29,24 @@ let fake_departure_item = DepartureItem(
     sdd: "2026-01-17"
 )
 
+let empty_departure_item = DepartureItem(
+    origin: "",
+    destination: "",
+    operator: "",
+    operatorCode: "",
+    cancelled: false,
+    headcode: "",
+    platformNo: "",
+    trainLength: 0,
+    expectedDeparture: "",
+    estimatedDeparture: "",
+    isDelayed: false,
+    delayLength: 0,
+    rid: "",
+    uid: "",
+    sdd: ""
+)
+
 struct DepartureData : Codable {
     let locationName: String
     let generatedAt: String
@@ -138,14 +156,22 @@ struct DepartureCardView : View {
     func formatTime(timeString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened) ?? "00:00"
+        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
         if date.count == 4 {
             date = "0\(date)"
         }
-        //        print("\(formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened))")
         
-        return date
+        var formatted = ""
+        
+        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
+        }else{
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
+        }
+                
+        return formatted
     }
     
     var body: some View {
@@ -462,11 +488,11 @@ struct DepartureCardView : View {
     @Previewable @StateObject var service_vm = ServiceViewModel(service: fake_service, errValue: false, loadingData: false)
 
     ScrollView {
-        DepartureCardView(style: .list, crs: "EUS", expanded: false)
+        DepartureCardView(style: .list, crs: "SWT", expanded: false)
             .environmentObject(vm)
             .environmentObject(service_vm)
             .onAppear(){
-                vm.fetchData(crs: "EUS")
+                vm.fetchData(crs: "SWT")
             }
     }.background(Color(red: 242/255, green: 242/255, blue: 247/255))
 }
@@ -477,11 +503,11 @@ struct DepartureCardView : View {
 
     NavigationStack{
         ScrollView{
-            DepartureCardView(style: .full, crs: "MAN", expanded: true)
+            DepartureCardView(style: .full, crs: "SWT", expanded: true)
                 .environmentObject(vm)
                 .environmentObject(service_vm)
                 .onAppear(){
-                    vm.fetchData(crs: "MAN")
+                    vm.fetchData(crs: "SWT")
                 }
         }
     }

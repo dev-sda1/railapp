@@ -37,14 +37,22 @@ struct TrainDepartureCard: View {
     func formatTime(timeString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened) ?? "00:00"
+        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
         if date.count == 4 {
             date = "0\(date)"
         }
-        //        print("\(formatter.date(from: timeString)?.formatted(date: .omitted, time: .shortened))")
         
-        return date
+        var formatted = ""
+        
+        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
+        }else{
+            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
+        }
+                
+        return formatted
     }
     
     func formatAdditionalDepartures(deplist: [DepartureItem]) -> String {
@@ -86,16 +94,16 @@ struct TrainDepartureCard: View {
                 Text("\(destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
                 
                 if cancelled == true {
-                    Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.red).strikethrough()
+                    Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 75, alignment: .trailing).foregroundStyle(Color.red).strikethrough()
                 }else{
                     if delayed == true {
                         if estimatedDepartureTime != "UNKN" && estimatedDepartureTime != "" {
-                            Text("\(formatTime(timeString: estimatedDepartureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.orange)
+                            Text("\(formatTime(timeString: estimatedDepartureTime))").font(.title3).bold().frame(maxWidth: 84, alignment: .trailing).foregroundStyle(Color.orange)
                         }else{
-                            Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.orange)
+                            Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 84, alignment: .trailing).foregroundStyle(Color.orange)
                         }
                     }else{
-                        Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 65, alignment: .trailing).foregroundStyle(Color.primary)
+                        Text("\(formatTime(timeString: departureTime))").font(.title3).bold().frame(maxWidth: 84, alignment: .trailing).foregroundStyle(Color.primary)
                     }
                     
                 }
