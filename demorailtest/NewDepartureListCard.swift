@@ -137,7 +137,7 @@ struct DepartureCardView : View {
     @State private var findingStation = true
     @State private var latitude = 0.0
     @State private var longitude = 0.0
-    @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", distanceTo: 0.0)
+    @State private var nearestStation: NearestStationInfo = NearestStationInfo(stationName: "", stationCRS: "", latitude: 0.0, longitude: 0.0, distanceTo: 0.0)
     @State private var loadingAnimation = false
     
     // Service Sheet Stuff
@@ -178,85 +178,6 @@ struct DepartureCardView : View {
         switch style {
         case .list:
             VStack(alignment: .leading) {
-                HStack(alignment: .center){
-                    Text("Departures")
-                        .font(.title2).bold()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(Color.primary)
-                }.padding([.bottom], 10.0)
-                
-                if vm.loadingData == true {
-                    VStack(alignment: .leading){
-                        Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                            .opacity(loadingAnimation ? 0.6 : 1)
-                            .animation(
-                                loadingAnimation ?
-                                    .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                    .default,
-                                value: loadingAnimation
-                            )
-                            .onAppear {
-                                loadingAnimation = true
-                            }
-                        
-                        Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                            .opacity(loadingAnimation ? 0.6 : 1)
-                            .animation(
-                                loadingAnimation ?
-                                    .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                    .default,
-                                value: loadingAnimation
-                            )
-                            .onAppear {
-                                loadingAnimation = true
-                            }
-
-                        Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                            .opacity(loadingAnimation ? 0.6 : 1)
-                            .animation(
-                                loadingAnimation ?
-                                    .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                    .default,
-                                value: loadingAnimation
-                            )
-                            .onAppear {
-                                loadingAnimation = true
-                            }
-
-                        Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                            .opacity(loadingAnimation ? 0.6 : 1)
-                            .animation(
-                                loadingAnimation ?
-                                    .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                    .default,
-                                value: loadingAnimation
-                            )
-                            .onAppear {
-                                loadingAnimation = true
-                            }
-                    }
-                    .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
-                    .cornerRadius(12.0)
-                    .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
-                }else{
-                    if vm.depList.isEmpty == false {
-                        ForEach(vm.depList.prefix(4).enumerated(), id: \.offset){ index, departure in
-                            let trust_data = DepartureTRUSTData(rid: departure.rid, uid: departure.uid, sdd: departure.sdd)
-                            
-                            if index == vm.depList.endIndex - 1 {
-                                TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
-                                    .padding([.top], 5.0)
-                                    .padding([.bottom], 3.0)
-                            }else{
-                                TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
-                            }
-                        }
-                    }else{
-                        Text("No departures expected for the next two hours.")
-                        .fixedSize(horizontal: false, vertical: true)
-                        .foregroundStyle(Color.primary)
-                    }
-                }
             }
             .padding()
             .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
@@ -266,101 +187,39 @@ struct DepartureCardView : View {
             .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.2), radius: 10, x: 0, y: 0)
             
             case .full:
-            ScrollView{
+            VStack{
                 VStack(alignment: .leading, spacing: 0){
-                    VStack(alignment: .leading, spacing: 0){
-                        // Title
-                        HStack(alignment: .center){
-                            Text("Departures")
-                                .font(.title).bold()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundStyle(Color.primary)
-                        }
-                    }
-                    .padding([.bottom], 10.0)
+//                    VStack(alignment: .leading, spacing: 0){
+//                        // Title
+//                        HStack(alignment: .center){
+//                            Text("Departures")
+//                                .font(.title).bold()
+//                                .frame(maxWidth: .infinity, alignment: .leading)
+//                                .foregroundStyle(Color.primary)
+//                        }
+//                    }
+//                    .padding([.bottom], 10.0)
                     
                     if vm.loadingData == true {
                         VStack(alignment: .leading){
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                                .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
                             
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
-                            
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                                .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
 
-                            
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                                .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
 
-                            
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                                .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
 
-                            
-                            Rectangle().foregroundStyle(Color.gray).frame(maxWidth: .infinity, minHeight: 90)
-                                .opacity(loadingAnimation ? 0.6 : 1)
-                                .animation(
-                                    loadingAnimation ?
-                                        .easeInOut(duration: 1).repeatForever(autoreverses: true) :
-                                        .default,
-                                    value: loadingAnimation
-                                )
-                                .onAppear {
-                                    loadingAnimation = true
-                                }
-
-
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                                .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
                         }
-                        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
-                        .cornerRadius(12.0)
-                        .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
+//                        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
+//                        .cornerRadius(12.0)
+//                        .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
                     }else{
                         if vm.depList.isEmpty == false {
                             ForEach(vm.depList.enumerated(), id: \.offset) { index, departure in
@@ -432,8 +291,8 @@ struct DepartureCardView : View {
                         }
                     }
                 }
-                .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
-                .padding()
+//                .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+                .padding(15)
                 .sheet(isPresented: $showServiceSheet) {
                     NavigationStack{
                         TrainServiceSheet(currentDeparture: serviceSheetData, laterDepartures: serviceSheetData.additionalServices ?? [])
@@ -447,22 +306,14 @@ struct DepartureCardView : View {
                 }
                 
             }
-            .overlay {
-                ZStack(alignment: .topTrailing){
-                    closeButton
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                }
-            }
-            .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+//            .overlay {
+//                ZStack(alignment: .topTrailing){
+//                    closeButton
+//                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+//                }
+//            }
+//            .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
 //            .ignoresSafeArea(.all, edges: [.top])
-            .toolbar(.hidden)
-            .statusBarHidden(true)
-            .onAppear(){
-                #if os(iOS)
-                    UIImpactFeedbackGenerator.init(style: .heavy).impactOccurred()
-                #endif
-            }
-            .scrollBounceBehavior(.always, axes: .vertical)
         }
     }
     

@@ -98,20 +98,27 @@ struct StationView: View {
                         .padding(.horizontal)
                         .padding(.bottom, 10)
                         
-                        NavigationLink {
-                            DepartureCardView(style: .full, crs: crsCode, expanded: true)
-                                .navigationTransition(.zoom(sourceID: "card", in: stnCardNamespace))
-                                .environmentObject(vm)
-                                .environmentObject(service_vm)
-                                .zIndex(100)
-                                
-                        } label: {
-                            DepartureCardView(style: .list, crs: crsCode, expanded: false)
-                                .environmentObject(vm)
-                                .environmentObject(service_vm)
-                        }
-                        .matchedTransitionSource(id: "card", in: stnCardNamespace)
-                        .buttonStyle(ScaledButtonStyle())
+                        DepartureCardView(style: .full, crs: crsCode, expanded: true)
+                            .navigationTransition(.zoom(sourceID: "card", in: stnCardNamespace))
+                            .environmentObject(vm)
+                            .environmentObject(service_vm)
+                            .zIndex(100)
+
+                        
+//                        NavigationLink {
+//                            DepartureCardView(style: .full, crs: crsCode, expanded: true)
+//                                .navigationTransition(.zoom(sourceID: "card", in: stnCardNamespace))
+//                                .environmentObject(vm)
+//                                .environmentObject(service_vm)
+//                                .zIndex(100)
+//                                
+//                        } label: {
+//                            DepartureCardView(style: .list, crs: crsCode, expanded: false)
+//                                .environmentObject(vm)
+//                                .environmentObject(service_vm)
+//                        }
+//                        .matchedTransitionSource(id: "card", in: stnCardNamespace)
+//                        .buttonStyle(ScaledButtonStyle())
                     }.overlay{
 //                        if expanded && locationAuthorised {
 //                            DepartureList(onClose: collapse, expanded: expanded, crs: nearestStation.stationCRS, )

@@ -11,6 +11,7 @@
 		1A8721F82F12DF3D00075B95 /* uk-railway-stations in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8721F72F12DF3D00075B95 /* uk-railway-stations */; };
 		1A8722282F18629B00075B95 /* Ifrit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8722272F18629B00075B95 /* Ifrit */; };
 		1A8722292F18629B00075B95 /* Ifrit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 1A8722272F18629B00075B95 /* Ifrit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		1A8B669C2F2955BA00A6231F /* ServiceTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8B669B2F29558A00A6231F /* ServiceTracker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,11 +30,27 @@
 
 /* Begin PBXFileReference section */
 		1A02D51B2F0A99D800B19BC8 /* demorailtest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = demorailtest.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A8B66822F2954E800A6231F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		1A8B66842F2954E800A6231F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		1A8B669B2F29558A00A6231F /* ServiceTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTracker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1A8B66992F29553E00A6231F /* Exceptions for "demorailtest" folder in "demorailtest" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1A02D51A2F0A99D800B19BC8 /* demorailtest */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1A02D51D2F0A99D800B19BC8 /* demorailtest */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1A8B66992F29553E00A6231F /* Exceptions for "demorailtest" folder in "demorailtest" target */,
+			);
 			path = demorailtest;
 			sourceTree = "<group>";
 		};
@@ -56,10 +73,11 @@
 		1A02D5122F0A99D800B19BC8 = {
 			isa = PBXGroup;
 			children = (
-				1A02D51D2F0A99D800B19BC8 /* demorailtest */,
+				1A8B669A2F29557C00A6231F /* Shared */,
 				1A02D51C2F0A99D800B19BC8 /* Products */,
 				CD585AB92691170A778587B3 /* Pods */,
 				1A8722262F18629B00075B95 /* Frameworks */,
+				1A02D51D2F0A99D800B19BC8 /* demorailtest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,8 +92,18 @@
 		1A8722262F18629B00075B95 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1A8B66822F2954E800A6231F /* WidgetKit.framework */,
+				1A8B66842F2954E800A6231F /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1A8B669A2F29557C00A6231F /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				1A8B669B2F29558A00A6231F /* ServiceTracker.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		CD585AB92691170A778587B3 /* Pods */ = {
@@ -163,6 +191,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1A8B669C2F2955BA00A6231F /* ServiceTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,9 +328,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = demorailtest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "train test";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to find your nearest station.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -348,9 +379,11 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = demorailtest/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "train test";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "We use your location to find your nearest station.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

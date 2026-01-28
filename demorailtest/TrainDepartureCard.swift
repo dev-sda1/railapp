@@ -210,8 +210,11 @@ struct TrainDepartureCard: View {
                 .padding([.bottom], 15.0)
             .padding([.leading], 2.0)
         }
-        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
-        .cornerRadius(12.0)
+        .background(colorScheme == .dark ? .white.opacity(0.03) : .clear).clipShape(.rect(cornerRadius: 19.0))
+//        .glassEffect(in: .rect(cornerRadius: 19.0))
+        .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white).interactive(), in: .rect(cornerRadius: 19.0))
+//        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
+//        .cornerRadius(12.0)
         .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
     }
 }
@@ -244,6 +247,8 @@ struct TrainDepartureCard: View {
         .hoverEffect()
         .clipShape(.rect(cornerRadius: 12))
         .padding(.horizontal, 16)
+        .blendMode(.lighten)
+
     }
     .frame(
         maxWidth: .infinity,
