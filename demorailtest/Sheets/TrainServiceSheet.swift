@@ -29,7 +29,7 @@ struct JourneyArraySchema: Codable, Identifiable {
 }
 
 struct CurrentServiceAPIResult: Codable {
-    var headcode: String
+    var headcode: String? = ""
     var `operator`: String
     var operatorCode: String
     var origin: String
@@ -65,14 +65,18 @@ struct CurrentServiceAPIResult: Codable {
 struct TrainServiceSheet: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.modelContext) private var context
-
+    
+    @Query private var pinnedServiceQuery: [PinnedService]
     @State private var serviceData: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: true, cancelReason: "", journey: [])
     @State private var fetchingServiceData = false
     @State private var firstRoundFetched = false
     @State private var refreshingData = false
+    @State private var isPinned = false
     
     @State var currentDeparture: DepartureItem
     @State var laterDepartures: [DepartureItem]
+    @State private var allPinnedServices: [PinnedService] = []
+
     @State private var isDarwin = AppSettingsManager().useDarwin
     @State private var task: Task<(), Error>?
 
@@ -101,6 +105,15 @@ struct TrainServiceSheet: View {
     
     func fetchData(uid: String, sdd: String){
         guard task == nil else { return }
+        
+        self.allPinnedServices = Array(pinnedServiceQuery)
+        self.allPinnedServices.forEach { pinnedServiceItem in
+            print(pinnedServiceItem.pinned_service.rid)
+            if pinnedServiceItem.pinned_service.rid == currentDeparture.rid {
+                self.isPinned = true
+            }
+        }
+
             
         var urlString = "https://d-railboard.pyxlwuff.dev/service/new/\(uid)/\(sdd)/standard"
         
@@ -408,11 +421,11 @@ struct TrainServiceSheet: View {
                                             
                                             VStack(alignment: .leading){
                                                 HStack {
-                                                    Button {
-                                                        
-                                                    } label: {
-                                                        Label("", systemImage: "pin.fill").frame(width: 7, height: 7).padding(.leading, 7)
-                                                    }
+//                                                    Button {
+//                                                        
+//                                                    } label: {
+//                                                        Label("", systemImage: "pin.fill").frame(width: 7, height: 7).padding(.leading, 7)
+//                                                    }
                                                     
                                                     Text("\(stop.locationName)").font(.headline).bold().frame(maxWidth: .infinity, alignment: .leading)
                                                 }
@@ -585,10 +598,38 @@ struct TrainServiceSheet: View {
                 .padding(.top, 20)
                 
                 Button {
+                    print("Pin Journey button pressed")
+                    guard let firstItem = serviceData.journey.first else { return }
+                    guard let lastItem = serviceData.journey.last else { return }
+                    
+                    let item = PinnedService(service: PinnedServiceSchema(origin: firstItem.crs, destination: lastItem.crs, operator: serviceData.operator, operatorCode: serviceData.operatorCode, cancelled: serviceData.cancelled, trackingFrom: firstItem.crs, trackingTo: lastItem.crs, rid: currentDeparture.rid, uid: currentDeparture.uid, sdd: currentDeparture.sdd, eta: "", ata: ""))
+                    
+                    print("Iterating")
+                    
+                    if isPinned == true {
+                        allPinnedServices.enumerated().forEach { index, pinnedServiceItem in
+                            if(currentDeparture.rid == pinnedServiceItem.pinned_service.rid) {
+                                if isPinned == true {
+                                    context.delete(pinnedServiceItem)
+                                    isPinned = false
+                                    print("Pin Removed")
+                                }
+                            }
+                        }
+                    }else{
+                        context.insert(item)
+                        allPinnedServices.append(item)
+                        isPinned = true
+                        print("Pin added")
+                    }
                     
                 } label: {
                     HStack {
-                        Label("Pin Journey", systemImage: "pin.fill").font(.body)
+                        if isPinned == true {
+                            Label("Unpin Journey", systemImage: "pin.fill").font(.body)
+                        }else{
+                            Label("Pin Journey", systemImage: "pin.fill").font(.body)
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
@@ -605,7 +646,5 @@ struct TrainServiceSheet: View {
 #Preview {
     @Previewable @Environment(\.colorScheme) var colorScheme
 
-    
-    
-    TrainServiceSheet(currentDeparture: DepartureItem(origin: "MARYLBN", destination: "AYLSBRY", operator: "Chiltern Railways", operatorCode: "CH", cancelled: false, headcode: "2A36", trainLength: 4, expectedDeparture: "", isDelayed: false, delayLength: 0, rid: "202601257602417", uid: "G23599", sdd: "2026-01-27"), laterDepartures: [])
+    TrainServiceSheet(currentDeparture: DepartureItem(origin: "Abbey Wood", destination: "Reading", operator: "Elizabeth Line", operatorCode: "XR", cancelled: false, headcode: "9R56", trainLength: 9, expectedDeparture: "2026-01-29T20:17:00", isDelayed: false, delayLength: 0, rid: "202601257602417", uid: "G23712", sdd: "2026-01-29"), laterDepartures: [])
 }

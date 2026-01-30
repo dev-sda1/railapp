@@ -13,7 +13,7 @@ import CoreLocation
 import MapKit
 
 extension CLLocationCoordinate2D {
-    static var station = CLLocationCoordinate2D(latitude: 53.476704, longitude: -2.228991)
+    static var station = CLLocationCoordinate2D(latitude: 51.527039, longitude: -0.132384)
 }
 
 struct HereView: View {
@@ -42,7 +42,7 @@ struct HereView: View {
             centerCoordinate: .station,
             distance: 1300,
             heading: 0,
-            pitch: 0
+            pitch: 45
         )
     )
 
@@ -96,7 +96,7 @@ struct HereView: View {
         
         let radius: Double = 5.0 // All stations within 5 Miles
         let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-//        let userLocation = CLLocation(latitude: 53.477735, longitude: -2.232185)
+//        let userLocation = CLLocation(latitude: 51.530245, longitude: -0.123645)
         nearestStation = NearestStationInfo(stationName: "", stationCRS: "", latitude: 0.0, longitude: 0.0, distanceTo: 1000000.0)
         
         var possibleNearStations: [NearestStationInfo] = []
@@ -124,9 +124,9 @@ struct HereView: View {
         position = .camera(
             MapCamera(
                 centerCoordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude - 0.0008, longitude: nearestStation.longitude),
-                distance: 1300,
+                distance: 1000,
                 heading: 0,
-                pitch: 0
+                pitch: 45
             )
         )
         
@@ -152,17 +152,17 @@ struct HereView: View {
     @State private var selectedPointsOfInterest: PointOfInterestCategories = .including([.publicTransport])
         
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack{
-                Map(position: $position){
-                    Annotation("\(nearestStation.stationName)", coordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude)) {
-                        ZStack {
-
-                        }
+                VStack(alignment: .leading){
+                    Map(position: $position){
+                        Marker("", systemImage: "mappin.circle.fill", coordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude))
                     }
-                    .annotationTitles(.hidden)
+                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: selectedPointsOfInterest, showsTraffic: false))
+                    .accessibilityHidden(true)
+                    .frame(maxWidth: .infinity, maxHeight: 380, alignment: .top)
+                    Spacer()
                 }
-                .mapStyle(.standard(elevation: .realistic, pointsOfInterest: selectedPointsOfInterest, showsTraffic: true))
                 
                 
                 GeometryReader { reader in
@@ -193,7 +193,7 @@ struct HereView: View {
                                 if findingStation == false && nearestStation.stationCRS != "" {
                                     ScrollView(.horizontal){
                                         LazyHStack {
-                                            VStack{
+                                            VStack(alignment: .leading){
                                                 Text("Live Times")
                                                     .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
                                                     .padding(.horizontal)
@@ -202,11 +202,12 @@ struct HereView: View {
                                                         .environmentObject(vm)
                                                         .environmentObject(service_vm)
                                                         .padding(.bottom, 45)
-                                                        .frame(minWidth: reader.size.width - 30, alignment: .center)
+                                                        .frame(minWidth: reader.size.width - 30, minHeight: reader.size.height, alignment: .top)
 
                                                 }
                                                 .glassEffect(in: .rect(cornerRadius: 29.0))
                                                 .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                                Spacer()
                                             }
                                             
                                             VStack{
@@ -223,6 +224,7 @@ struct HereView: View {
                                                 }
                                                 .glassEffect(in: .rect(cornerRadius: 29.0))
                                                 .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                                Spacer()
                                             }
                                             
                                             VStack{
@@ -239,6 +241,7 @@ struct HereView: View {
                                                 }
                                                 .glassEffect(in: .rect(cornerRadius: 29.0))
                                                 .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                                Spacer()
                                             }
 
                                         }
@@ -290,7 +293,7 @@ struct HereView: View {
                       }
 
                       NavigationLink {
-                          SettingsPage()
+//                          SettingsPage()
                       } label: {
                           Text("About")
                       }
@@ -303,6 +306,32 @@ struct HereView: View {
             .background(colorScheme == .dark ? Color.black : Color(red: 242/255, green: 242/255, blue: 247/255))
             .onAppear(){
                 getNearestStation()
+            }
+            .overlay(alignment: .top) {
+                if locationAuthorised {
+                    if findingStation == false && nearestStation.stationCRS == "" {
+                        ZStack{
+                            VStack{
+                                Text("No national rail stations near your current location.")
+                                    .foregroundStyle(Color.white)
+                                    .font(.title)
+                            }.padding()
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                        .background(Color.primary)
+                    }
+                }else{
+                    ZStack{
+                        VStack{
+                            Text("You'll need to grant access to your location to use the Here tab")
+                                .foregroundStyle(Color.white)
+                                .font(.title)
+                        }.padding()
+                    }
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    .background(Color.primary)
+
+                }
             }
         }
     }

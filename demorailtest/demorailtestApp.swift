@@ -14,6 +14,6 @@ struct demorailtestApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: RecentlySearched.self)
+        .modelContainer(for: [RecentlySearched.self, PinnedService.self])
     }
 }

@@ -243,6 +243,7 @@ struct DepartureCardView : View {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top], 5.0)
                                             .padding([.bottom], 5.0)
+                                            .accessibilitySortPriority(Double(index) + 1.0)
                                     }
 //                                    NavigationLink{
 //                                        ServiceView(serviceInfo: departure)
@@ -270,6 +271,7 @@ struct DepartureCardView : View {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
                                             .padding([.top], 5.0)
                                             .padding([.bottom], 5.0)
+                                            .accessibilitySortPriority(Double(index) + 1.0)
                                     }
                                     
                                     

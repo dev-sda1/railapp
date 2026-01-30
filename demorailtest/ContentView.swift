@@ -23,7 +23,7 @@ struct ContentView: View {
             }
             
             Tab("Journeys", systemImage: "tram.fill", value: TabKey.journeys) {
-                SwiftUIView2()
+                PinnedServicesView()
             }
             
             Tab("Live Trains", systemImage: "clock.badge.fill", value: TabKey.live) {
@@ -184,12 +184,6 @@ struct NearestStationInfo: Hashable {
     var latitude: Double
     var longitude: Double
     var distanceTo: Double
-}
-
-struct SwiftUIView2: View {
-    var body: some View {
-        Text("View 2")
-    }
 }
 
 struct Stations: Searchable {
