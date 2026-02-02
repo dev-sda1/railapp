@@ -95,8 +95,8 @@ struct HereView: View {
         guard let loadedFile = try? decoder.decode([StationJSONFileEntry].self, from: data) else { return }
         
         let radius: Double = 5.0 // All stations within 5 Miles
-        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-//        let userLocation = CLLocation(latitude: 51.530245, longitude: -0.123645)
+//        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
+        let userLocation = CLLocation(latitude: 51.530245, longitude: -0.123645)
         nearestStation = NearestStationInfo(stationName: "", stationCRS: "", latitude: 0.0, longitude: 0.0, distanceTo: 1000000.0)
         
         var possibleNearStations: [NearestStationInfo] = []
@@ -123,8 +123,8 @@ struct HereView: View {
         
         position = .camera(
             MapCamera(
-                centerCoordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude - 0.0008, longitude: nearestStation.longitude),
-                distance: 1000,
+                centerCoordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude),
+                distance: 800,
                 heading: 0,
                 pitch: 45
             )
@@ -150,129 +150,144 @@ struct HereView: View {
     }
     
     @State private var selectedPointsOfInterest: PointOfInterestCategories = .including([.publicTransport])
+    @State private var showFullMap = false
+    @State private var posX: CGFloat = 0
+    @State private var departureViewOpacity: Double = 1.0
+    @State private var departureViewOffset: Double = -200.0
         
     var body: some View {
         NavigationStack {
-            ZStack{
-                VStack(alignment: .leading){
-                    Map(position: $position){
-                        Marker("", systemImage: "mappin.circle.fill", coordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude))
+            GeometryReader { reader in
+                ScrollView {
+                    GeometryReader { mapReader in
+                        let offsetY = mapReader.frame(in: .global).minY
+                        let isScrolled = offsetY > 0
+                                                                        
+                        Spacer()
+                            .frame(height: isScrolled ? 550 + offsetY : 550)
+                            .background {
+                                Map(position: $position, interactionModes: []){
+                                    Marker("", systemImage: "mappin.circle.fill", coordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude))
+                                }
+                                .mapStyle(.standard(elevation: .realistic, pointsOfInterest: selectedPointsOfInterest, showsTraffic: false))
+                                .accessibilityHidden(true)
+                                .offset(y: isScrolled ? -offsetY: 0)
+                                .zIndex(1)
+                            }
                     }
-                    .mapStyle(.standard(elevation: .realistic, pointsOfInterest: selectedPointsOfInterest, showsTraffic: false))
-                    .accessibilityHidden(true)
-                    .frame(maxWidth: .infinity, maxHeight: 380, alignment: .top)
-                    Spacer()
-                }
-                
-                
-                GeometryReader { reader in
-                    ScrollView {
-                        Spacer(minLength: 210)
-                        VStack(){
-                            VStack{
-                                Text("\(nearestStation.stationName)")
-                                    .font(.title)
-                                    .bold()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.top, 20)
-                                HStack{
-                                    Group{
-                                        Image(systemName: "location.fill")
-                                            .foregroundStyle(Color.blue)
-                                        Text("\(String(format: "%.2f", nearestStation.distanceTo))mi - Last updated \(vm.lastUpdated)")
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .font(.subheadline)
-                                            .foregroundStyle(Color.primary)
-                                            .padding([.leading], -3.0)
-                                    }
-                                }
-                            }
-                            .padding()
-                            
-                            if locationAuthorised {
-                                if findingStation == false && nearestStation.stationCRS != "" {
-                                    ScrollView(.horizontal){
-                                        LazyHStack {
-                                            VStack(alignment: .leading){
-                                                Text("Live Times")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    DepartureCardView(style: .full, crs: nearestStation.stationCRS, expanded: true)
-                                                        .environmentObject(vm)
-                                                        .environmentObject(service_vm)
-                                                        .padding(.bottom, 45)
-                                                        .frame(minWidth: reader.size.width - 30, minHeight: reader.size.height, alignment: .top)
-
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
-                                            }
-                                            
-                                            VStack{
-                                                Text("Service Status")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    VStack(alignment: .leading){
-                                                        Spacer()
-                                                    }
-                                                    .padding(15)
-                                                    .frame(minWidth: reader.size.width - 30, alignment: .center)
-
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
-                                            }
-                                            
-                                            VStack{
-                                                Text("Sample Page 3")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    VStack(alignment: .leading){
-                                                        Spacer()
-                                                    }
-                                                    .padding(15)
-                                                    .frame(minWidth: reader.size.width - 18, alignment: .center)
-
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
-                                            }
-
-                                        }
-                                        .scrollTargetLayout()
-                                    }
-                                    .scrollTargetBehavior(.viewAligned)
-                                    .safeAreaPadding(.horizontal, 10)
-                                }
-                            }
-                            
-//                                Rectangle()
-//                                    .frame(maxWidth: .infinity, minHeight: 100).offset(x: 0, y: -7).foregroundStyle(Color.clear)
+                    .frame(minHeight: 550, alignment: .top)
+                    
+                    GeometryReader { innerGeo -> Text in
+                        self.posX = innerGeo.frame(in: .global).minY
+                        
+                        if posX >= 670 && showFullMap == false{
+                            showFullMap = true
+                            departureViewOpacity = 0.0
+                            departureViewOffset = 55.0
                         }
-                        .frame(minHeight: reader.size.height)
 
-//                            .background(
-//                            )
-                        .background(
-                            LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing)
-                                .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white), in: .rect(cornerRadius: 0))
-                                .mask(LinearGradient(gradient: Gradient(colors: [.black, .black, .black, .black, .black, .black, .black, .black, .black, .black, .clear]), startPoint: .bottom, endPoint: .top))
-                        )
-//                            .ignoresSafeArea()
-//                            .background(, in: RoundedRectangle(cornerRadius: 15.0))
-//                            .glassEffect(in: .rect(cornerRadius: 16.0))
-                        
-                        
+                        return Text("")
                     }
-                    .edgesIgnoringSafeArea(.bottom)
-                    .scrollEdgeEffectHidden()
+                    
+                    VStack(){
+                        VStack{
+                            Text("\(nearestStation.stationName)")
+                                .font(.title)
+                                .bold()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, 20)
+                            HStack{
+                                Group{
+                                    Image(systemName: "location.fill")
+                                        .foregroundStyle(Color.blue)
+                                    Text("\(String(format: "%.2f", nearestStation.distanceTo))mi - Last updated \(vm.lastUpdated)")
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .font(.subheadline)
+                                        .foregroundStyle(Color.primary)
+                                        .padding([.leading], -3.0)
+                                    Text("\(self.posX)")
+
+                                }
+                            }
+                        }
+                        .padding()
+                        
+                        if locationAuthorised {
+                            if findingStation == false && nearestStation.stationCRS != "" {
+                                ScrollView(.horizontal){
+                                    LazyHStack {
+                                        VStack(alignment: .leading){
+                                            Text("Live Times")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                            VStack{
+                                                DepartureCardView(style: .full, crs: nearestStation.stationCRS, expanded: true)
+                                                    .environmentObject(vm)
+                                                    .environmentObject(service_vm)
+                                                    .padding(.bottom, 45)
+                                                    .frame(minWidth: reader.size.width - 30, minHeight: reader.size.height, alignment: .top)
+                                                    
+                                            }
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
+                                        }
+                                        
+                                        VStack{
+                                            Text("Service Status")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                            VStack{
+                                                VStack(alignment: .leading){
+                                                    Spacer()
+                                                }
+                                                .padding(15)
+                                                .frame(minWidth: reader.size.width - 30, alignment: .center)
+
+                                            }
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
+                                        }
+                                        
+                                        VStack{
+                                            Text("Sample Page 3")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                            VStack{
+                                                VStack(alignment: .leading){
+                                                    Spacer()
+                                                }
+                                                .padding(15)
+                                                .frame(minWidth: reader.size.width - 18, alignment: .center)
+
+                                            }
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
+                                        }
+
+                                    }
+                                    .scrollTargetLayout()
+                                }
+                                .opacity(departureViewOpacity)
+                                .animation(.linear(duration: 0.1), value: departureViewOpacity)
+                                .scrollTargetBehavior(.viewAligned)
+                                .safeAreaPadding(.horizontal, 10)
+                            }
+                        }
+                    }
+                    .background(
+                        LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing)
+                            .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white), in: .rect(cornerRadius: 0))
+                            .mask(LinearGradient(gradient: Gradient(colors: [.black, .black, .black, .black, .black, .black, .black, .black, .black, .black, .clear]), startPoint: .bottom, endPoint: .top))
+                    )
+                    .offset(x: 0, y: departureViewOffset) // -200 is normal view.
+                    .animation(.linear(duration: 0.1), value: departureViewOffset)
+                    .zIndex(200.0)
                 }
+                .edgesIgnoringSafeArea(.all)
+                .scrollEdgeEffectHidden()
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing){

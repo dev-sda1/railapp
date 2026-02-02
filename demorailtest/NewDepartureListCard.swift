@@ -142,7 +142,7 @@ struct DepartureCardView : View {
     
     // Service Sheet Stuff
     @State private var showServiceSheet = false
-    @State private var serviceSheetData: DepartureItem = fake_departure_item
+    @State private var serviceSheetData: DepartureItem = empty_departure_item
     @State private var serviceSheetTRUSTData: DepartureTRUSTData = DepartureTRUSTData(rid: "", uid: "", sdd: "")
     
     struct StationJSONFileEntry : Codable {
