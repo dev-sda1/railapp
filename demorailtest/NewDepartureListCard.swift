@@ -141,8 +141,7 @@ struct DepartureCardView : View {
     @State private var loadingAnimation = false
     
     // Service Sheet Stuff
-    @State private var showServiceSheet = false
-    @State private var serviceSheetData: DepartureItem = empty_departure_item
+    @State private var selectedDeparture: DepartureItem?
     @State private var serviceSheetTRUSTData: DepartureTRUSTData = DepartureTRUSTData(rid: "", uid: "", sdd: "")
     
     struct StationJSONFileEntry : Codable {
@@ -233,11 +232,7 @@ struct DepartureCardView : View {
                                         
                                         temp_dep.additionalServices?.insert(temp, at: 0)
                                         
-                                        serviceSheetData = temp_dep
-                                        
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                            showServiceSheet.toggle()
-                                        }
+                                        selectedDeparture = temp_dep
                                         
                                     } label: {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
@@ -261,11 +256,7 @@ struct DepartureCardView : View {
                                         
                                         temp_dep.additionalServices?.insert(temp, at: 0)
                                         
-                                        serviceSheetData = temp_dep
-                                        
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                            showServiceSheet.toggle()
-                                        }
+                                        selectedDeparture = temp_dep
 
                                     } label: {
                                         TrainDepartureCard(trust_data: trust_data, tocCode: departure.operatorCode, destination: departure.destination, departureTime: departure.expectedDeparture, estimatedDepartureTime: departure.estimatedDeparture ?? "UNKN", platform: departure.platformNo ?? "Unknown", coachNum: departure.trainLength, laterDepartures: departure.additionalServices ?? [], delayed: departure.isDelayed, delayLength: departure.delayLength, cancelled: departure.cancelled)
@@ -295,12 +286,12 @@ struct DepartureCardView : View {
                 }
 //                .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
                 .padding(15)
-                .sheet(isPresented: $showServiceSheet) {
+                .sheet(item: $selectedDeparture) { item in
                     NavigationStack{
-                        TrainServiceSheet(currentDeparture: serviceSheetData, laterDepartures: serviceSheetData.additionalServices ?? [])
+                        TrainServiceSheet(currentDeparture: item, laterDepartures: item.additionalServices ?? [])
                         .toolbar {
                             Button(role: .close) {
-                                showServiceSheet = false
+                                selectedDeparture = nil
                             }
                         }
                     }
