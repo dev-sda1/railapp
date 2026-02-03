@@ -67,7 +67,7 @@ struct TrainServiceSheet: View {
     @Environment(\.modelContext) private var context
     
     @Query private var pinnedServiceQuery: [PinnedService]
-    @State private var serviceData: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: true, cancelReason: "", journey: [])
+    @State private var serviceData: CurrentServiceAPIResult = CurrentServiceAPIResult(headcode: "", operator: "", operatorCode: "", origin: "", destination: "", cancelled: false, cancelReason: "", journey: [])
     @State private var fetchingServiceData = false
     @State private var firstRoundFetched = false
     @State private var refreshingData = false
