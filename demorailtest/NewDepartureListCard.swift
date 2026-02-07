@@ -84,11 +84,11 @@ class DeparturesViewModel: ObservableObject {
         self.loadingData = false
         self.lastUpdated = "never"
     
-        fetchData(crs: "")
+//        fetchData(crs: "")
     }
     
     @MainActor
-    func fetchData(crs: String){
+    func fetchData(crs: String) async{
         let urlString = "https://d-railboard.pyxlwuff.dev/station/\(crs)"
 //        let urlString = "http://localhost:3000/station/\(crs)"
 
@@ -98,6 +98,7 @@ class DeparturesViewModel: ObservableObject {
         request.httpMethod = "GET"
         
         Task {
+            print("Finding departure info for: \(crs)")
             self.loadingData = true
             let (data,_) = try await URLSession.shared.data(for: request)
             let json = try JSONDecoder().decode(DepartureData.self, from: data)
@@ -151,28 +152,7 @@ struct DepartureCardView : View {
         let crsCode: String
         let constituentCountry: String
     }
-    
-    func formatTime(timeString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
-        if date.count == 4 {
-            date = "0\(date)"
-        }
-        
-        var formatted = ""
-        
-        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
-        }else{
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
-        }
-                
-        return formatted
-    }
-    
     var body: some View {
         switch style {
         case .list:
@@ -180,7 +160,9 @@ struct DepartureCardView : View {
             }
             .padding()
             .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+            #if os(iOS) || os(visionOS)
             .hoverEffect()
+            #endif
             .clipShape(.rect(cornerRadius: 16))
             .padding(.horizontal, 16)
             .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.2), radius: 10, x: 0, y: 0)
@@ -200,6 +182,8 @@ struct DepartureCardView : View {
 //                    .padding([.bottom], 10.0)
                     
                     if vm.loadingData == true {
+                        #if os(iOS)
+
                         VStack(alignment: .leading){
                             Rectangle().frame(maxWidth: .infinity, minHeight: 90)
                                 .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
@@ -216,6 +200,22 @@ struct DepartureCardView : View {
                             Rectangle().frame(maxWidth: .infinity, minHeight: 90)
                                 .glassEffect(.regular.tint(.gray).interactive(), in: .rect(cornerRadius: 19.0))
                         }
+                        
+                        #else
+                        VStack(alignment: .leading){
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                            
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+
+                            Rectangle().frame(maxWidth: .infinity, minHeight: 90)
+                        }
+
+                        
+                        #endif
 //                        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
 //                        .cornerRadius(12.0)
 //                        .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
@@ -280,6 +280,7 @@ struct DepartureCardView : View {
                             Text("No departures expected for the next two hours.")
                             .fixedSize(horizontal: false, vertical: true)
                             .foregroundStyle(Color.primary)
+                            .padding(.horizontal)
 
                         }
                     }
@@ -335,8 +336,8 @@ struct DepartureCardView : View {
         DepartureCardView(style: .list, crs: "SWT", expanded: false)
             .environmentObject(vm)
             .environmentObject(service_vm)
-            .onAppear(){
-                vm.fetchData(crs: "SWT")
+            .task {
+                await vm.fetchData(crs: "SWT")
             }
     }.background(Color(red: 242/255, green: 242/255, blue: 247/255))
 }
@@ -347,11 +348,11 @@ struct DepartureCardView : View {
 
     NavigationStack{
         ScrollView{
-            DepartureCardView(style: .full, crs: "SWT", expanded: true)
+            DepartureCardView(style: .full, crs: "MAN", expanded: true)
                 .environmentObject(vm)
                 .environmentObject(service_vm)
-                .onAppear(){
-                    vm.fetchData(crs: "SWT")
+                .task {
+                    await vm.fetchData(crs: "MAN")
                 }
         }
     }

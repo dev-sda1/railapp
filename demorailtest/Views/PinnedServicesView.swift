@@ -18,7 +18,7 @@ struct PinnedServicesView: View {
     @State private var allPinnedServices: [PinnedService] = []
     @State private var currentlyPinned: PinnedServiceSchema = PinnedServiceSchema(origin: "", destination: "", operator: "", operatorCode: "", cancelled: false, trackingFrom: "", trackingTo: "", rid: "", uid: "", sdd: "", eta: "", ata: "")
     
-    @State private var showServiceSheet = false
+    @State private var selectedDeparture: DepartureItem?
     @State private var serviceSheetData: DepartureItem = fake_departure_item
     @State private var serviceSheetTRUSTData: DepartureTRUSTData = DepartureTRUSTData(rid: "", uid: "", sdd: "")
     
@@ -36,8 +36,7 @@ struct PinnedServicesView: View {
                             let temp = DepartureItem(origin: serviceItem.pinned_service.origin, destination: serviceItem.pinned_service.destination, operator: serviceItem.pinned_service.operator, operatorCode: serviceItem.pinned_service.operatorCode, cancelled: serviceItem.pinned_service.cancelled, headcode: "", trainLength: 0, expectedDeparture: serviceItem.pinned_service.eta, isDelayed: false, delayLength: 0, rid: serviceItem.pinned_service.rid, uid: serviceItem.pinned_service.uid, sdd: serviceItem.pinned_service.sdd)
                             
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                serviceSheetData = temp
-                                showServiceSheet.toggle()
+                                selectedDeparture = temp
                             }
                         } label: {
                             PinnedServiceCard(style: .arrived, serviceData: serviceItem.pinned_service)
@@ -59,12 +58,12 @@ struct PinnedServicesView: View {
         .onAppear() {
             allPinnedServices = Array(pinnedServiceQuery)
         }
-        .sheet(isPresented: $showServiceSheet) {
+        .sheet(item: $selectedDeparture) { item in
             NavigationStack{
-                TrainServiceSheet(currentDeparture: serviceSheetData, laterDepartures: [])
+                TrainServiceSheet(currentDeparture: item, laterDepartures: item.additionalServices ?? [])
                 .toolbar {
                     Button(role: .close) {
-                        showServiceSheet = false
+                        selectedDeparture = nil
                     }
                 }
             }

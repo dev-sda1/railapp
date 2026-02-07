@@ -61,7 +61,6 @@ class ServiceViewModel: ObservableObject {
     @MainActor
     func getServiceData(uid: String, sdd: String){
         let urlString = "https://d-railboard.pyxlwuff.dev/service/\(uid)/\(sdd)/standard"
-//        let urlString = "http://localhost:3000/service/\(uid)/\(sdd)/standard"
         
         guard !loadingData else { return }
         var request = URLRequest(url: URL(string: urlString)!)
@@ -75,12 +74,6 @@ class ServiceViewModel: ObservableObject {
                 let json = try JSONDecoder().decode(CurrentServiceAPIResult.self, from: data)
 
                 self.service = json
-//                if !err_json.error.isEmpty {
-//                    self.errValue = true
-//                    print("Error from server: \(err_json.error)")
-//                }else{
-//                    self.service = json
-//                }
             }catch {
                 print(error)
             }
@@ -110,27 +103,6 @@ struct ServiceView: View {
         static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) {}
     }
     
-    func formatTime(timeString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_GB_POSIX")
-        
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
-        if date.count == 4 {
-            date = "0\(date)"
-        }
-        
-        var formatted = ""
-        
-        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
-        }else{
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
-        }
-                
-        return formatted
-    }
-                
     var body: some View {
         ZStack{
             NavigationStack {
@@ -165,11 +137,13 @@ struct ServiceView: View {
                 }
                 .background(colorScheme == .dark ? Color.black : Color(red: 242/255, green: 242/255, blue: 247/255))
                 .font(.headline)
+                #if os(iOS) || os(visionOS)
                 .navigationBarItems(trailing: Button {
                     isPinned.toggle()
                 } label: {
                     Label("Dropdown", systemImage: isPinned ? "pin.fill" : "pin")
                 })
+                #endif
             }
         }
         .edgesIgnoringSafeArea([.leading, .trailing])

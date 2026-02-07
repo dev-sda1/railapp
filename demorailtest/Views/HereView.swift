@@ -18,14 +18,17 @@ extension CLLocationCoordinate2D {
 
 struct HereView: View {
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.modelContext) private var context
+    @Query private var recentlySearchedStations: [RecentlySearched]
+
     @Namespace private var stationNamespace
+    
+    var selectedStation: NearestStationInfo?
     @State private var scrollPosition: CGPoint = .zero
     @State private var collapsedScrollPosition: CGPoint = .zero
 
     @State private var loadingData: Bool = true
     @State private var depList: [DepartureItem] = []
-    @State var expanded = false
-    @State var activeId = UUID()
     @State private var fullyExpanded = false
     @State private var safeFrame: CGRect = .zero
     @StateObject private var vm = DeparturesViewModel(depList: [], loadingData: false, lastUpdated: "")
@@ -48,82 +51,26 @@ struct HereView: View {
         )
     )
 
-    
-    let urlString = "https://d-railboard.pyxlwuff.dev/station/MAN"
-    
     struct ScrollOffsetPreferenceKey: PreferenceKey {
         static var defaultValue: CGPoint = .zero
 
         static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) {}
     }
-        
-    struct StationJSONFileEntry : Codable {
-        let stationName: String
-        let lat: Double
-        let long: Double
-        let crsCode: String
-        let constituentCountry: String
-    }
     
-    private func getNearestStation(){
-        findingStation = true
-        let locManager = CLLocationManager()
-        locManager.requestWhenInUseAuthorization()
-        
-        DispatchQueue.global().async {
-            if CLLocationManager.locationServicesEnabled(){
-                locationAuthorised = true
-    //            locManager.delegate = self
-                locManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-                locManager.startUpdatingLocation()
-                
-                guard let location: CLLocationCoordinate2D = locManager.location?.coordinate else { return }
-                print(location.latitude)
-                print(location.longitude)
-                latitude = location.latitude
-                longitude = location.longitude
-                findNearestStationFromLocation()
-            }
-        }
+    private func loadProvidedStation(stnData: NearestStationInfo) async {
+        self.findingStation = true
+        self.nearestStation = stnData
+        await self.vm.fetchData(crs: stnData.stationCRS)
+        self.findingStation = false
     }
-    
-    private func findNearestStationFromLocation(){
-        let url = Bundle.stationsJSONBundleURL
-        guard let data = try? Data(contentsOf: url) else { return }
-        print("Data has been tried successfully")
+             
+    private func getNearestStation() async {
+        self.findingStation = true
+        self.nearestStation = await findNearestStationFromLocation(radius: 5.0)
         
-        let decoder = JSONDecoder()
+        print(nearestStation)
         
-        guard let loadedFile = try? decoder.decode([StationJSONFileEntry].self, from: data) else { return }
-        
-        let radius: Double = 5.0 // All stations within 5 Miles
-        let userLocation = CLLocation(latitude: latitude, longitude: longitude)
-//        let userLocation = CLLocation(latitude: 51.530245, longitude: -0.123645)
-        nearestStation = NearestStationInfo(stationName: "", stationCRS: "", latitude: 0.0, longitude: 0.0, distanceTo: 1000000.0)
-        
-        var possibleNearStations: [NearestStationInfo] = []
-        
-        loadedFile.enumerated().forEach { index, station in
-            let stationLocation = CLLocation(latitude: station.lat, longitude: station.long)
-            let distanceInMetres = userLocation.distance(from: stationLocation)
-            let distanceInMiles = distanceInMetres * 0.00062137
-
-            if distanceInMiles < radius {
-                print("User is near: \(station.crsCode)")
-//                nearestStation = NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, distanceTo: distanceInMiles)
-                possibleNearStations.append(NearestStationInfo(stationName: station.stationName, stationCRS: station.crsCode, latitude: station.lat, longitude: station.long, distanceTo: distanceInMiles))
-            }
-        }
-        
-        possibleNearStations.forEach { nearStation in
-            if nearStation.distanceTo <= nearestStation.distanceTo {
-                nearestStation = nearStation
-            }
-        }
-        
-        print("Nearest station found: \(nearestStation.stationCRS)")
-        
-        position = .camera(
+        self.position = .camera(
             MapCamera(
                 centerCoordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude),
                 distance: 800,
@@ -131,34 +78,46 @@ struct HereView: View {
                 pitch: 45
             )
         )
-        
+                
         if nearestStation.stationCRS == "" {
             print("Couldn't find a nearby station")
         }else{
-            vm.fetchData(crs: nearestStation.stationCRS)
+            await self.vm.fetchData(crs: nearestStation.stationCRS)
         }
         
-        findingStation = false
+        self.findingStation = false
     }
     
-    private func collapse() {
-        withAnimation(.spring(duration: 0.35)) {
-            expanded = false
+    private func addToRecentlySearched(station: RecentlySearchedSchema){
+        let item = RecentlySearched(station_info: station)
+        var already_searched_recently = false
+        
+        recentlySearchedStations.prefix(6).enumerated().forEach{ index, list in
+            if(item.station.crsCode == list.station.crsCode){
+                context.delete(list)
+                context.insert(item)
+                already_searched_recently = true
+                print("Moved item to top of list.")
+            }
         }
+        
+        if(already_searched_recently == false){
+            context.insert(item)
+            print("Inserted item for first time.")
+        }
+        
+        if(recentlySearchedStations.count > 6){
+            guard let bottom_item_index = recentlySearchedStations.last else { return }
+            context.delete(bottom_item_index)
+        }
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-            layoutID = UUID()
-        }
-    }
-    
+        
     @State private var selectedPointsOfInterest: PointOfInterestCategories = .including([.publicTransport])
     @State private var showFullMap = false
     @State private var posX: CGFloat = 0
     @State private var departureViewOpacity: Double = 1.0
     @State private var departureViewOffset: Double = -200.0
-    
-//    @State private var departureViewOpacity: Double = 0.0
-//    @State private var departureViewOffset: Double = -75.0
     @State private var isScrollDisabled = false
 
         
@@ -171,7 +130,7 @@ struct HereView: View {
                         let isScrolled = offsetY > 0
                                                                         
                         Spacer()
-                            .frame(height: showFullMap ? reader.size.height - 35 : isScrolled ? 550 + offsetY : 550)
+//                            .frame(height: 550)
                             .background {
                                 Map(position: $position, interactionModes: showFullMap == true ? [.all] : []){
                                     Marker("", systemImage: "mappin.circle.fill", coordinate: CLLocationCoordinate2D(latitude: nearestStation.latitude, longitude: nearestStation.longitude))
@@ -214,8 +173,10 @@ struct HereView: View {
                         .frame(height: 280)
                         .background(
                             LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing)
+                            #if os(iOS)
                                 .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white), in: .rect(cornerRadius: 0))
                                 .mask(LinearGradient(gradient: Gradient(colors: [.black, .black, .black, .black, .black, .black, .black, .black, .black, .black, .clear]), startPoint: .bottom, endPoint: .top))
+                            #endif
                         )
                         .zIndex(2)
                         .offset(x: 0, y: -70)
@@ -258,88 +219,105 @@ struct HereView: View {
                                     Group{
                                         Image(systemName: "location.fill")
                                             .foregroundStyle(Color.blue)
-                                        Text("\(String(format: "%.2f", nearestStation.distanceTo))mi - Last updated \(vm.lastUpdated)")
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .font(.subheadline)
-                                            .foregroundStyle(Color.primary)
-                                            .padding([.leading], -3.0)
-                                        Text("\(scrollPosition.y)")
+                                        
+                                        if nearestStation.distanceTo == -1.0 {
+                                            Text("Last updated \(vm.lastUpdated)")
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .font(.subheadline)
+                                                .foregroundStyle(Color.primary)
+                                                .padding([.leading], -3.0)
+                                            Text("\(scrollPosition.y)")
 
+                                        }else{
+                                            Text("\(String(format: "%.2f", nearestStation.distanceTo))mi - Last updated \(vm.lastUpdated)")
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .font(.subheadline)
+                                                .foregroundStyle(Color.primary)
+                                                .padding([.leading], -3.0)
+                                            Text("\(scrollPosition.y)")
+
+                                        }
                                     }
                                 }
                             }
                             .padding()
                             
-                            if locationAuthorised {
-                                if findingStation == false && nearestStation.stationCRS != "" {
-                                    ScrollView(.horizontal){
-                                        LazyHStack {
-                                            VStack(alignment: .leading){
-                                                Text("Live Times")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    DepartureCardView(style: .full, crs: nearestStation.stationCRS, expanded: true)
-                                                        .environmentObject(vm)
-                                                        .environmentObject(service_vm)
-                                                        .padding(.bottom, 45)
-                                                        .frame(minWidth: reader.size.width - 30, minHeight: reader.size.height, alignment: .top)
-                                                        
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
-                                            }
-                                            
+                            if (findingStation == false && nearestStation.stationCRS != "") || selectedStation?.stationCRS != "" {
+                                ScrollView(.horizontal){
+                                    LazyHStack {
+                                        VStack(alignment: .leading){
+                                            Text("Live Times")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
                                             VStack{
-                                                Text("Service Status")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    VStack(alignment: .leading){
-                                                        Spacer()
-                                                    }
-                                                    .padding(15)
-                                                    .frame(minWidth: reader.size.width - 30, alignment: .center)
-
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
+                                                DepartureCardView(style: .full, crs: nearestStation.stationCRS, expanded: true)
+                                                    .environmentObject(vm)
+                                                    .environmentObject(service_vm)
+                                                    .padding(.bottom, 45)
+                                                    .frame(minWidth: reader.size.width - 30, minHeight: reader.size.height, alignment: .top)
+                                                    
                                             }
-                                            
-                                            VStack{
-                                                Text("Sample Page 3")
-                                                    .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
-                                                    .padding(.horizontal)
-                                                VStack{
-                                                    VStack(alignment: .leading){
-                                                        Spacer()
-                                                    }
-                                                    .padding(15)
-                                                    .frame(minWidth: reader.size.width - 18, alignment: .center)
-
-                                                }
-                                                .glassEffect(in: .rect(cornerRadius: 29.0))
-                                                .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
-                                                Spacer()
-                                            }
-
+                                            #if os(iOS)
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            #endif
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
                                         }
-                                        .scrollTargetLayout()
+                                        
+                                        VStack{
+                                            Text("Service Status")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                            VStack{
+                                                VStack(alignment: .leading){
+                                                    Spacer()
+                                                }
+                                                .padding(15)
+                                                .frame(minWidth: reader.size.width - 30, alignment: .center)
+
+                                            }
+                                            #if os(iOS)
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            #endif
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
+                                        }
+                                        
+                                        VStack{
+                                            Text("Sample Page 3")
+                                                .font(.title2).bold().padding(.top, 15).frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(.horizontal)
+                                            VStack{
+                                                VStack(alignment: .leading){
+                                                    Spacer()
+                                                }
+                                                .padding(15)
+                                                .frame(minWidth: reader.size.width - 18, alignment: .center)
+
+                                            }
+                                            #if os(iOS)
+                                            .glassEffect(in: .rect(cornerRadius: 29.0))
+                                            #endif
+                                            .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.35), radius: 10, x: 0, y: 0)
+                                            Spacer()
+                                        }
+
                                     }
-                                    .opacity(departureViewOpacity)
-//                                    .animation(.linear(duration: 0.1), value: departureViewOpacity)
-                                    .scrollTargetBehavior(.viewAligned)
-                                    .safeAreaPadding(.horizontal, 10)
+                                    .scrollTargetLayout()
                                 }
+                                .opacity(departureViewOpacity)
+//                                    .animation(.linear(duration: 0.1), value: departureViewOpacity)
+                                .scrollTargetBehavior(.viewAligned)
+                                .safeAreaPadding(.horizontal, 10)
                             }
                         }
                         .matchedGeometryEffect(id: "stnName0", in: stationNamespace)
                         .background(
                             LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing)
+                            #if os(iOS)
                                 .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white), in: .rect(cornerRadius: 0))
                                 .mask(LinearGradient(gradient: Gradient(colors: [.black, .black, .black, .black, .black, .black, .black, .black, .black, .black, .clear]), startPoint: .bottom, endPoint: .top))
+                            #endif
                         )
                         .offset(x: 0, y: departureViewOffset) // -200 is normal view.
 //                        .animation(.linear(duration: 0.1), value: departureViewOffset)
@@ -351,7 +329,7 @@ struct HereView: View {
                         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
                             self.scrollPosition = value
                             
-                            if(self.scrollPosition.y >= 530 && self.showFullMap == false) {
+                            if(self.scrollPosition.y >= 590 && self.showFullMap == false) {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     showFullMap = true
                                     departureViewOpacity = 0.0
@@ -362,12 +340,15 @@ struct HereView: View {
 
                     }
                 }
+                #if os(iOS)
                 .edgesIgnoringSafeArea(.all)
                 .scrollEdgeEffectHidden()
+                #endif
                 .coordinateSpace(name: "scroll")
-//                .scrollDisabled(isScrollDisabled)
-            }
+           }
             .toolbar {
+                #if os(iOS) || os(visionOS)
+
                 ToolbarItem(placement: .navigationBarTrailing){
                     Button {
 
@@ -395,37 +376,54 @@ struct HereView: View {
                           .fontWeight(.bold)
                   }
               }
+            #endif
             }
             .background(colorScheme == .dark ? Color.black : Color(red: 242/255, green: 242/255, blue: 247/255))
-            .onAppear(){
-                getNearestStation()
-            }
-            .overlay(alignment: .top) {
-                if locationAuthorised {
-                    if findingStation == false && nearestStation.stationCRS == "" {
-                        ZStack{
-                            VStack{
-                                Text("No national rail stations near your current location.")
-                                    .foregroundStyle(Color.white)
-                                    .font(.title)
-                            }.padding()
-                        }
-                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                        .background(Color.primary)
-                    }
+            .task {
+                if selectedStation?.stationCRS == "" {
+                    await getNearestStation()
                 }else{
-                    ZStack{
-                        VStack{
-                            Text("You'll need to grant access to your location to use the Here tab")
-                                .foregroundStyle(Color.white)
-                                .font(.title)
-                        }.padding()
-                    }
-                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                    .background(Color.primary)
-
+                    guard let selected = selectedStation.self else { return await getNearestStation() }
+                    
+                    self.position = .camera(
+                        MapCamera(
+                            centerCoordinate: CLLocationCoordinate2D(latitude: selected.latitude, longitude: selected.longitude),
+                            distance: 800,
+                            heading: 0,
+                            pitch: 45
+                        )
+                    )
+                    
+                    addToRecentlySearched(station: RecentlySearchedSchema(stationName: selected.stationName, crsCode: selected.stationCRS, latitude: selected.latitude, longitude: selected.longitude))
+                    await loadProvidedStation(stnData: selected)
                 }
             }
+//            .overlay(alignment: .top) { TODO: Come back to this later, need to setup some error formatting in the LocationHandler util file.
+//                if locationAuthorised {
+//                    if findingStation == false && nearestStation.stationCRS == "" {
+//                        ZStack{
+//                            VStack{
+//                                Text("No national rail stations near your current location.")
+//                                    .foregroundStyle(Color.white)
+//                                    .font(.title)
+//                            }.padding()
+//                        }
+//                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                        .background(Color.primary)
+//                    }
+//                }else{
+//                    ZStack{
+//                        VStack{
+//                            Text("You'll need to grant access to your location to use the Here tab")
+//                                .foregroundStyle(Color.white)
+//                                .font(.title)
+//                        }.padding()
+//                    }
+//                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                    .background(Color.primary)
+//
+//                }
+//            }
         }
     }
 }

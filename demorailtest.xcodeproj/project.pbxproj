@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1A02D53D2F0AB1E600B19BC8 /* MarqueeLabel in Frameworks */ = {isa = PBXBuildFile; productRef = 1A02D53C2F0AB1E600B19BC8 /* MarqueeLabel */; };
 		1A8721F82F12DF3D00075B95 /* uk-railway-stations in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8721F72F12DF3D00075B95 /* uk-railway-stations */; };
 		1A8722282F18629B00075B95 /* Ifrit in Frameworks */ = {isa = PBXBuildFile; productRef = 1A8722272F18629B00075B95 /* Ifrit */; };
 		1A8722292F18629B00075B95 /* Ifrit in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 1A8722272F18629B00075B95 /* Ifrit */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -59,7 +58,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A02D53D2F0AB1E600B19BC8 /* MarqueeLabel in Frameworks */,
 				1A8721F82F12DF3D00075B95 /* uk-railway-stations in Frameworks */,
 				1A8722282F18629B00075B95 /* Ifrit in Frameworks */,
 			);
@@ -151,7 +149,6 @@
 			mainGroup = 1A02D5122F0A99D800B19BC8;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				1A02D53B2F0AB1E600B19BC8 /* XCRemoteSwiftPackageReference "MarqueeLabel" */,
 				1A8721F62F12DF3D00075B95 /* XCRemoteSwiftPackageReference "uk-railway-stations" */,
 				1A8722122F182AC600075B95 /* XCRemoteSwiftPackageReference "Ifrit" */,
 			);
@@ -313,7 +310,9 @@
 				DEVELOPMENT_TEAM = PYPMAYY3H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = demorailtest/Info.plist;
@@ -341,14 +340,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -364,7 +363,9 @@
 				DEVELOPMENT_TEAM = PYPMAYY3H5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = demorailtest/Info.plist;
@@ -392,14 +393,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -428,14 +429,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1A02D53B2F0AB1E600B19BC8 /* XCRemoteSwiftPackageReference "MarqueeLabel" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/cbpowell/MarqueeLabel";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.5.3;
-			};
-		};
 		1A8721F62F12DF3D00075B95 /* XCRemoteSwiftPackageReference "uk-railway-stations" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/davwheat/uk-railway-stations";
@@ -455,11 +448,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		1A02D53C2F0AB1E600B19BC8 /* MarqueeLabel */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A02D53B2F0AB1E600B19BC8 /* XCRemoteSwiftPackageReference "MarqueeLabel" */;
-			productName = MarqueeLabel;
-		};
 		1A8721F72F12DF3D00075B95 /* uk-railway-stations */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1A8721F62F12DF3D00075B95 /* XCRemoteSwiftPackageReference "uk-railway-stations" */;

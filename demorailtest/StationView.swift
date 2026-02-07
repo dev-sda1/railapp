@@ -11,7 +11,7 @@ import uk_railway_stations
 import SwiftData
 
 #Preview {
-    StationView(crsCode: "MAN", stationName: "Manchester Piccadilly")
+    StationView(crsCode: "MAN", stationName: "Manchester Piccadilly", longitude: 0.0, latitude: 0.0)
 }
 
 struct StationView: View {
@@ -31,6 +31,8 @@ struct StationView: View {
     @State private var layoutID = UUID()
     var crsCode: String
     var stationName: String
+    var longitude: Double
+    var latitude: Double
             
     struct ScrollOffsetPreferenceKey: PreferenceKey {
         static var defaultValue: CGPoint = .zero
@@ -49,29 +51,6 @@ struct StationView: View {
     }
     
     
-    private func addToRecentlySearched(station: RecentlySearchedSchema){
-        let item = RecentlySearched(station_info: station)
-        var already_searched_recently = false
-        
-        recentlySearchedStations.prefix(6).enumerated().forEach{ index, list in
-            if(item.station.crsCode == list.station.crsCode){
-                context.delete(list)
-                context.insert(item)
-                already_searched_recently = true
-                print("Moved item to top of list.")
-            }
-        }
-        
-        if(already_searched_recently == false){
-            context.insert(item)
-            print("Inserted item for first time.")
-        }
-        
-        if(recentlySearchedStations.count > 6){
-            guard let bottom_item_index = recentlySearchedStations.last else { return }
-            context.delete(bottom_item_index)
-        }
-    }
         
     var body: some View {
             NavigationStack {
@@ -87,11 +66,11 @@ struct StationView: View {
                                         .padding([.leading], -3.0)
                                 }
                                 
-                                Button("Refresh", systemImage: "arrow.clockwise", action: {
-                                    vm.fetchData(crs: crsCode)
-                                })
-                                .font(.subheadline).bold()
-                                .padding(.trailing, 2)
+//                                Button("Refresh", systemImage: "arrow.clockwise", action: {
+//                                    await vm.fetchData(crs: crsCode)
+//                                })
+//                                .font(.subheadline).bold()
+//                                .padding(.trailing, 2)
                             }
                         }
                         .coordinateSpace(name: "scroll")
@@ -99,7 +78,9 @@ struct StationView: View {
                         .padding(.bottom, 10)
                         
                         DepartureCardView(style: .full, crs: crsCode, expanded: true)
+                            #if os(iOS) || os(visionOS)
                             .navigationTransition(.zoom(sourceID: "card", in: stnCardNamespace))
+                            #endif
                             .environmentObject(vm)
                             .environmentObject(service_vm)
                             .zIndex(100)
@@ -134,9 +115,9 @@ struct StationView: View {
                 .navigationTitle("\(stationName)")
                 .font(.headline)
 
-                .onAppear(){
-                    addToRecentlySearched(station: RecentlySearchedSchema(stationName: stationName, crsCode: crsCode))
-                    vm.fetchData(crs: crsCode)
+                .task {
+//                    addToRecentlySearched(station: RecentlySearchedSchema(stationName: stationName, crsCode: crsCode, latitude: latitude, longitude: longitude))
+                    await vm.fetchData(crs: crsCode)
                 }
             }
     }

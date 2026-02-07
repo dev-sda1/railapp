@@ -11,6 +11,8 @@ import SwiftData
 struct RecentlySearchedSchema: Codable, Hashable{
     let stationName: String
     let crsCode: String
+    let latitude: Double
+    let longitude: Double
 }
 
 @Model

@@ -33,28 +33,7 @@ struct TrainDepartureCard: View {
     var delayed: Bool
     var delayLength: Int
     var cancelled: Bool
-    
-    func formatTime(timeString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_GB_POSIX")
         
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
-        if date.count == 4 {
-            date = "0\(date)"
-        }
-        
-        var formatted = ""
-        
-        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
-        }else{
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
-        }
-                
-        return formatted
-    }
-    
     func formatAdditionalDepartures(deplist: [DepartureItem]) -> String {
         var res = ""
         
@@ -212,7 +191,10 @@ struct TrainDepartureCard: View {
         }
         .background(colorScheme == .dark ? .white.opacity(0.03) : .clear).clipShape(.rect(cornerRadius: 19.0))
 //        .glassEffect(in: .rect(cornerRadius: 19.0))
+        
+        #if os(iOS)
         .glassEffect(.regular.tint(colorScheme == .dark ? .clear : .white).interactive(), in: .rect(cornerRadius: 19.0))
+        #endif
 //        .background(colorScheme == .dark ? Color(red: 58/255, green: 58/255, blue: 60/255) : Color.white)
 //        .cornerRadius(12.0)
         .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.08), radius: 10, x: 0, y: 0)
@@ -244,7 +226,9 @@ struct TrainDepartureCard: View {
         }
         .padding()
         .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color.white)
+        #if os(iOS) || os(visionOS)
         .hoverEffect()
+        #endif
         .clipShape(.rect(cornerRadius: 12))
         .padding(.horizontal, 16)
         .blendMode(.lighten)

@@ -80,29 +80,6 @@ struct TrainServiceSheet: View {
     @State private var isDarwin = AppSettingsManager().useDarwin
     @State private var task: Task<(), Error>?
 
-        
-       
-    func formatTime(timeString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyy-MM-dd'T'HH:mm:ss"
-        formatter.locale = Locale(identifier: "en_GB_POSIX")
-        
-        var date = formatter.date(from: timeString)?.formatted(date: .omitted, time: .standard) ?? "00:00"
-        if date.count == 4 {
-            date = "0\(date)"
-        }
-        
-        var formatted = ""
-        
-        if date.firstIndex(of: "a") == nil && date.firstIndex(of: "p") == nil {
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])"
-        }else{
-            formatted = "\(date.split(separator: ":")[0]):\(date.split(separator: ":")[1])\(date.split(separator: ":")[2].suffix(2))"
-        }
-                
-        return formatted
-    }
-    
     func fetchData(uid: String, sdd: String){
         guard task == nil else { return }
         
@@ -166,75 +143,128 @@ struct TrainServiceSheet: View {
     
     var body: some View {
         VStack(alignment: .leading){
-            HStack(alignment: .top){
-                Image(GetLogoOfTOC(code: currentDeparture.operatorCode))
-                    .resizable()
-                    .frame(width: 45, height: 45)
-                    .cornerRadius(6.0)
-                    .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.12), radius: 5, x: 0, y: 0)
+            VStack {
+                HStack(alignment: .top){
+                    Image(GetLogoOfTOC(code: currentDeparture.operatorCode))
+                        .resizable()
+                        .frame(width: 41, height: 41)
+                        .cornerRadius(9.0)
+                    
+                    if isDarwin == true {
+                        VStack{
+                            Text("\(currentDeparture.uid) \(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
+                            Text("\(formatTime(timeString: currentDeparture.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.gray).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                    }else{
+                        VStack{
+                            Text("\(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
+                            Text("\(formatTime(timeString: currentDeparture.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.gray).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.horizontal)
+                .padding(.bottom, 16)
                 
-                if isDarwin == true {
-                    VStack{
-                        Text("\(currentDeparture.uid) \(formatTime(timeString: currentDeparture.expectedDeparture)) to \(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
-                        Text("\(currentDeparture.operator)").font(.footnote).foregroundStyle(Color.gray).frame(maxWidth: .infinity, alignment: .leading)
+                
+                HStack(spacing: 15) {
+                    if currentDeparture.cancelled {
+                        Image(systemName: "clock.fill")
+                            .foregroundStyle(Color.red)
+                            .frame(width: 13.0, height: 13.0)
+                        Text("Cancelled")
+                            .font(.caption)
+                            .foregroundStyle(Color.red)
+                            .padding(.leading, -5)
+                            .padding(.trailing, 5)
+                    }else{
+                        if currentDeparture.delayLength > 0 {
+                            Image(systemName: "clock.fill")
+                                .foregroundStyle(Color.orange)
+                                .frame(width: 13.0, height: 13.0)
+                            Text("\(currentDeparture.delayLength)min late")
+                                .font(.caption)
+                                .foregroundStyle(Color.orange)
+                                .padding(.leading, -5)
+                                .padding(.trailing, 5)
+                        }else{
+                            Image(systemName: "clock.fill")
+                                .foregroundStyle(Color.green)
+                                .frame(width: 13.0, height: 13.0)
+                            Text("On Time")
+                                .font(.caption)
+                                .foregroundStyle(Color.green)
+                                .padding(.leading, -5)
+                                .padding(.trailing, 5)
+                            
+                        }
+                    }
+                    
+                    if currentDeparture.trainLength != 0 {
+                        Group{
+                            Image(systemName: "train.side.middle.car")
+                                .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
+                                .frame(width: 13.0, height: 13.0)
+                            Text("\(currentDeparture.trainLength) Coaches")
+                                .font(.caption)
+                                .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
+                                .padding(.leading, -5)
+                        }
+                    }else{
+                        Group{
+                            Image(systemName: "train.side.middle.car")
+                                .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
+                                .frame(width: 13.0, height: 13.0)
+                               
+                            Text("Formation Unknown")
+                                .font(.caption)
+                                .foregroundStyle(colorScheme == .dark ? Color(red: 210/255, green: 210/255, blue: 210/255) : Color.gray)
+                                .padding(.leading, -5)
+                        }
                     }
 
-                }else{
-                    VStack{
-                        Text("\(formatTime(timeString: currentDeparture.expectedDeparture)) to \(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
-                        Text("\(currentDeparture.operator)").font(.footnote).foregroundStyle(Color.gray).frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    
+                    Text("Platform \(currentDeparture.platformNo ?? "Unknown")")
+                        .padding([.leading, .trailing], 10.0)
+                        .padding([.top, .bottom], 2.0)
+                        .font(.caption).bold()
+                        .background(Color(red: 1 / 255, green: 48 / 255, blue: 102 / 255))
+                        .foregroundStyle(Color.white)
+                        .cornerRadius(8.5)
 
                 }
+
+
             }
-            .frame(maxWidth: .infinity, alignment: .top)
-            .padding(.horizontal)
-            .padding(.bottom, 16)
-//            .glassEffect()
-            
-            ScrollView{
-                if laterDepartures.count != 0 {
-                    VStack{
-                        Text("Additional Departures").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
                         
-                        ScrollView(.horizontal){
-                            HStack{
-                                ForEach(laterDepartures) { laterService in
-                                    Button {
-                                        currentDeparture = laterService
-                                        fetchData(uid: laterService.uid, sdd: laterService.sdd)
-                                    } label: {
-                                        VStack{
-                                            if laterService.cancelled {
-                                                Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().strikethrough().foregroundStyle(Color.red)
-                                                Text("Cancelled").foregroundStyle(Color.red)
-                                            }else{
-                                                if laterService.isDelayed {
-                                                    if laterService.delayLength > 0 {
-                                                        Text("\(formatTime(timeString: laterService.estimatedDeparture ?? "00:00"))").font(.title3).bold().foregroundStyle(Color.orange)
-                                                        Text("Delayed \(laterService.delayLength)min").foregroundStyle(Color.orange)
-                                                    }else{
-                                                        Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.orange)
-                                                        Text("Delayed").foregroundStyle(Color.orange)
-                                                    }
-                                                }else{
-                                                    Text("\(formatTime(timeString: laterService.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.primary)
-                                                    Text("On Time").foregroundStyle(Color.green)
-                                                }
-                                                
-                                            }
+            ScrollView{
+                if laterDepartures.count != 0 && laterDepartures.count > 1 {
+                    VStack{
+                        Text("Additional Departures").font(.subheadline).foregroundStyle(Color.secondary).frame(maxWidth: .infinity, alignment: .leading)
+                        Picker("Later Departures", selection: $currentDeparture.rid) {
+                            ForEach(Array(laterDepartures).prefix(3)) { laterService in
+                                if laterService.cancelled {
+                                    Text("\(formatTime(timeString: laterService.expectedDeparture))").foregroundStyle(Color.red).strikethrough().tag(laterService.rid)
+                                }else{
+                                    if laterService.isDelayed {
+                                        if laterService.delayLength > 0 {
+                                            Text("\(formatTime(timeString: laterService.estimatedDeparture ?? "00:00"))").foregroundStyle(Color.orange).tag(laterService.rid)
+                                        }else{
+                                            Text("\(formatTime(timeString: laterService.expectedDeparture))").foregroundStyle(Color.orange).tag(laterService.rid)
                                         }
-                                        .padding()
-                                        .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color(red: 242/255, green: 242/255, blue: 247/255))
-                                        .cornerRadius(12)
+                                    }else{
+                                        Text("\(formatTime(timeString: laterService.expectedDeparture))").foregroundStyle(Color.primary).tag(laterService.rid)
                                     }
                                 }
+                                
                             }
                         }
-                        
+                        .pickerStyle(.segmented)
                     }
                     .padding(.top)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 50)
                 }
                 
                 if serviceData.cancelled == true {
@@ -263,79 +293,90 @@ struct TrainServiceSheet: View {
                 
                 
                 VStack{
-                    Text("Calling Points").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
-                    
                     VStack{
                         VStack(alignment: .center){
                             ForEach(serviceData.journey) { stop in
                                 if serviceData.journey.first?.crs == stop.crs {
                                     HStack{
                                         VStack(alignment: .center){
-                                            Circle().frame(width: 15, height: 15).offset(x: 0, y: 3).foregroundStyle(stop.atd ?? "" != "" || stop.isCancelled == true ? Color.gray : Color.black)
-                                            Rectangle().frame(width: 4, height: 58).offset(x: 0, y: -12).foregroundStyle(stop.atd ?? "" != "" || stop.isCancelled == true ? Color.gray : Color.black)
+                                            Circle().overlay(Circle().stroke(Color.white, lineWidth: 3)).frame(width: 15, height: 15).offset(x: 0, y: 3).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).zIndex(2.0).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
+                                            Rectangle().frame(width: 4, height: 75).offset(x: 0, y: -5).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
                                         }
                                         
-                                        VStack(alignment: .leading){
-                                            Text("\(stop.locationName)").font(.headline).bold().frame(maxWidth: .infinity, alignment: .leading)
-                                            HStack{
+                                        VStack(alignment: .leading) {
+                                            HStack(){
+                                                Text("\(stop.locationName)").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                                                
                                                 if stop.isCancelled {
-                                                    Image(systemName: "clock.fill")
+                                                    Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                        .font(.headline)
                                                         .foregroundStyle(Color.red)
-                                                        .frame(width: 13.0, height: 13.0)
-                                                    Text("Cancelled")
-                                                        .font(.caption)
-                                                        .foregroundStyle(Color.red)
+                                                        .strikethrough()
                                                 }else{
                                                     if stop.lateness ?? 0 > 0 {
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.orange)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("\(stop.lateness ?? 0)min late")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.orange)
-                                                    }else{
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.green)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("On Time")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.green)
-                                                        
-                                                    }
-                                                }
-                                                
-                                            }.padding(.top, -5)
-                                            Spacer()
-                                        }
-                                        
-                                        VStack(alignment: .leading){
-                                            if stop.isCancelled {
-                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
-                                                    .font(.headline).bold()
-                                                    .foregroundStyle(Color.red)
-                                                    .strikethrough()
-                                                    .frame(maxWidth: 72, alignment: .trailing)
-                                            }else{
-                                                if stop.lateness ?? 0 > 0 {
-                                                    if stop.etd ?? "" != "" || stop.etd ?? "" != "UNKN" {
-                                                        Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
-                                                            .font(.headline).bold()
-                                                            .foregroundStyle(Color.orange)
-                                                            .frame(maxWidth: 72, alignment: .trailing)
+                                                        if stop.etd ?? "" != "" {
+                                                            HStack {
+                                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.red)
+                                                                    .strikethrough()
+                                                                Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.primary)
+                                                            }
+    
+                                                        }else{
+                                                            Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                                .font(.headline)
+                                                                .foregroundStyle(Color.orange)
+                                                        }
                                                     }else{
                                                         Text("\(formatTime(timeString: stop.std ?? "00:00"))")
-                                                            .font(.headline).bold()
-                                                            .foregroundStyle(Color.orange)
-                                                            .frame(maxWidth: 72, alignment: .trailing)
+                                                            .font(.headline)
+                                                            .foregroundStyle(Color.primary)
                                                     }
-                                                }else{
-                                                    Text("\(formatTime(timeString: stop.std ?? "00:00"))")
-                                                        .font(.headline).bold()
-                                                        .foregroundStyle(Color.primary)
-                                                        .frame(maxWidth: 72, alignment: .trailing)
                                                 }
                                             }
                                             
+                                            HStack{
+                                                Text("Platform \(stop.platform ?? "Unknown")")
+                                                    .padding([.leading, .trailing], 10.0)
+                                                    .padding([.top, .bottom], 2.0)
+                                                    .font(.caption).bold()
+                                                    .background(Color(red: 1 / 255, green: 48 / 255, blue: 102 / 255))
+                                                    .foregroundStyle(Color.white)
+                                                    .cornerRadius(8.5)
+                                                
+                                                Spacer()
+                                                
+                                                if stop.isCancelled == true {
+                                                    Text("Cancelled").font(.subheadline).foregroundStyle(Color.red)
+                                                }else{
+                                                    if stop.lateness ?? 0 > 0 {
+                                                        if stop.atd ?? "" != "" {
+                                                            Text("Departed \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                        }else {
+                                                            if stop.ata ?? "" != "" {
+                                                                Text("Arrived \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else{
+                                                                Text("\(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }
+                                                        }
+                                                    }else{
+                                                        if stop.atd ?? "" != "" {
+                                                            Text("Departed On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                        }else{
+                                                            if stop.ata ?? "" != "" {
+                                                                Text("Arrived On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else{
+                                                                Text("On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            .padding(.top, -5)
+
                                             Spacer()
                                         }
                                     }
@@ -343,241 +384,165 @@ struct TrainServiceSheet: View {
                                     if serviceData.journey.last?.crs == stop.crs {
                                         HStack{
                                             VStack(alignment: .center){
-                                                Circle().frame(width: 15, height: 15).offset(x: 0, y: -15)
-                                                Rectangle().frame(width: 0, height: 50).offset(x: 0, y: -23)
+                                                Circle().overlay(Circle().stroke(Color.white, lineWidth: 3)).frame(width: 15, height: 15).offset(x: 0, y: -15).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).zIndex(2.0).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
+                                                Rectangle().frame(width: 0, height: 35).offset(x: 0, y: -23).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
                                             }
                                             
-                                            VStack(alignment: .leading){
-                                                Text("\(stop.locationName)").font(.headline).bold().frame(maxWidth: .infinity, alignment: .leading)
-                                                HStack{
+                                            VStack(alignment: .leading) {
+                                                HStack(){
+                                                    Text("\(stop.locationName)").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                                                    
                                                     if stop.isCancelled {
-                                                        Image(systemName: "clock.fill")
+                                                        Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                            .font(.headline)
                                                             .foregroundStyle(Color.red)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("Cancelled")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.red)
+                                                            .strikethrough()
                                                     }else{
                                                         if stop.lateness ?? 0 > 0 {
-                                                            Image(systemName: "clock.fill")
-                                                                .foregroundStyle(Color.orange)
-                                                                .frame(width: 13.0, height: 13.0)
-                                                            Text("\(stop.lateness ?? 0)min late")
-                                                                .font(.caption)
-                                                                .foregroundStyle(Color.orange)
-                                                        }else{
-                                                            Image(systemName: "clock.fill")
-                                                                .foregroundStyle(Color.green)
-                                                                .frame(width: 13.0, height: 13.0)
-                                                            Text("On Time")
-                                                                .font(.caption)
-                                                                .foregroundStyle(Color.green)
-                                                        }
-                                                        
-                                                    }
-                                                    
-                                                }.padding(.top, -5)
-                                                Spacer()
-                                            }
-                                            .padding(.top, -17)
-                                            
-                                            VStack(alignment: .leading){
-                                                if stop.isCancelled {
-                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                        .font(.headline).bold()
-                                                        .foregroundStyle(Color.red)
-                                                        .strikethrough()
-                                                        .frame(maxWidth: 72, alignment: .trailing)
-                                                }else{
-                                                    if stop.lateness ?? 0 > 0 {
-                                                        if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
-                                                            Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
-                                                                .font(.headline).bold()
-                                                                .foregroundStyle(Color.orange)
-                                                                .frame(maxWidth: 72, alignment: .trailing)
+                                                            if stop.eta ?? "" != "" {
+                                                                HStack {
+                                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.red)
+                                                                        .strikethrough()
+                                                                    Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.primary)
+                                                                }
+        
+                                                            }else{
+                                                                Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.orange)
+                                                            }
                                                         }else{
                                                             Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                .font(.headline).bold()
-                                                                .foregroundStyle(Color.orange)
-                                                                .frame(maxWidth: 72, alignment: .trailing)
+                                                                .font(.headline)
+                                                                .foregroundStyle(Color.primary)
                                                         }
-                                                    }else{
-                                                        Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                            .font(.headline).bold()
-                                                            .foregroundStyle(Color.primary)
-                                                            .frame(maxWidth: 72, alignment: .trailing)
                                                     }
                                                 }
+                                                
+                                                HStack{
+                                                    Text("Platform \(stop.platform ?? "Unknown")")
+                                                        .padding([.leading, .trailing], 10.0)
+                                                        .padding([.top, .bottom], 2.0)
+                                                        .font(.caption).bold()
+                                                        .background(Color(red: 1 / 255, green: 48 / 255, blue: 102 / 255))
+                                                        .foregroundStyle(Color.white)
+                                                        .cornerRadius(8.5)
+                                                    
+                                                    Spacer()
+                                                    
+                                                    if stop.isCancelled == true {
+                                                        Text("Cancelled").font(.subheadline).foregroundStyle(Color.red)
+                                                    }else{
+                                                        if stop.lateness ?? 0 > 0 {
+                                                            if stop.ata ?? "" != "" {
+                                                                Text("Arrived \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else{
+                                                                Text("\(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }
+                                                        }else{
+                                                            if (stop.ata ?? "" != "") {
+                                                                Text("Arrived On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else{
+                                                                Text("On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                .padding(.top, -5)
+
+                                                Spacer()
                                             }
-                                            .padding(.top, -17)
+                                            .padding(.top, -18)
                                         }
                                         .padding(.bottom, -25)
                                     }else{
                                         HStack{
                                             VStack(alignment: .center){
-                                                Circle().overlay(Circle().stroke(stop.atd ?? "" != "" || stop.isCancelled == true ? Color.gray : Color.black, lineWidth: 4)).frame(width: 15, height: 15).offset(x: 0, y: -14).foregroundStyle(.clear)
-                                                Rectangle().frame(width: 4, height: 50).offset(x: 0, y: -23).foregroundStyle(stop.atd ?? "" != "" || stop.isCancelled == true ? Color.gray : Color.black)
+                                                Circle().overlay(Circle().stroke(Color.white, lineWidth: 3)).frame(width: 15, height: 15).offset(x: 0, y: -6).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).zIndex(2.0).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
+                                                Rectangle().frame(width: 4, height: 75).offset(x: 0, y: -14).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
                                             }
                                             
-                                            VStack(alignment: .leading){
-                                                HStack {
-//                                                    Button {
-//                                                        
-//                                                    } label: {
-//                                                        Label("", systemImage: "pin.fill").frame(width: 7, height: 7).padding(.leading, 7)
-//                                                    }
+                                            VStack(alignment: .leading) {
+                                                HStack(){
+                                                    Text("\(stop.locationName)").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
                                                     
-                                                    Text("\(stop.locationName)").font(.headline).bold().frame(maxWidth: .infinity, alignment: .leading)
+                                                    if stop.isCancelled {
+                                                        Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                            .font(.headline)
+                                                            .foregroundStyle(Color.red)
+                                                            .strikethrough()
+                                                    }else{
+                                                        if stop.lateness ?? 0 > 0 {
+                                                            if stop.eta ?? "" != "" {
+                                                                HStack {
+                                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.red)
+                                                                        .strikethrough()
+                                                                    Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.primary)
+                                                                }
+        
+                                                            }else{
+                                                                Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.orange)
+                                                            }
+                                                        }else{
+                                                            Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                .font(.headline)
+                                                                .foregroundStyle(Color.primary)
+                                                        }
+                                                    }
                                                 }
                                                 
                                                 HStack{
-                                                    if stop.isCancelled {
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.red)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("Cancelled")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.red)
-                                                    }
+                                                    Text("Platform \(stop.platform ?? "Unknown")")
+                                                        .padding([.leading, .trailing], 10.0)
+                                                        .padding([.top, .bottom], 2.0)
+                                                        .font(.caption).bold()
+                                                        .background(Color(red: 1 / 255, green: 48 / 255, blue: 102 / 255))
+                                                        .foregroundStyle(Color.white)
+                                                        .cornerRadius(8.5)
                                                     
-                                                    if stop.lateness ?? 0 > 0 {
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.orange)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("\(stop.lateness ?? 0)min late")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.orange)
-                                                    }else{
-                                                        Image(systemName: "clock.fill")
-                                                            .foregroundStyle(Color.green)
-                                                            .frame(width: 13.0, height: 13.0)
-                                                        Text("On Time")
-                                                            .font(.caption)
-                                                            .foregroundStyle(Color.green)
-                                                        
-                                                    }
-                                                }.padding(.top, -5)
-                                                Spacer()
-                                            }
-                                            .padding(.top, -17)
-                                            
-                                            if stop.atd ?? "" != "" {
-                                                VStack(alignment: .leading){
-                                                    if stop.isCancelled {
-                                                        Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                            .font(.headline).bold()
-                                                            .foregroundStyle(Color.red)
-                                                            .strikethrough()
-                                                            .frame(maxWidth: 72, alignment: .trailing)
-                                                        Spacer()
-                                                        
+                                                    Spacer()
+                                                    
+                                                    if stop.isCancelled == true {
+                                                        Text("Cancelled").font(.subheadline).foregroundStyle(Color.red)
                                                     }else{
                                                         if stop.lateness ?? 0 > 0 {
-                                                            if stop.atd ?? "" != "" || stop.atd ?? "" != "UNKN" {
-                                                                Text("\(formatTime(timeString: stop.atd ?? "00:00"))")
-                                                                    .font(.headline).bold()
-                                                                    .foregroundStyle(Color.orange)
-                                                                    .frame(maxWidth: 72, alignment: .trailing)
-                                                                Spacer()
-                                                                
-                                                            }else{
-                                                                Text("\(formatTime(timeString: stop.atd ?? "00:00"))")
-                                                                    .font(.headline).bold()
-                                                                    .foregroundStyle(Color.orange)
-                                                                    .frame(maxWidth: 72, alignment: .trailing)
-                                                                Spacer()
-                                                                
+                                                            if stop.atd ?? "" != "" {
+                                                                Text("Departed \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else {
+                                                                if stop.ata ?? "" != "" {
+                                                                    Text("Arrived \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                }else{
+                                                                    Text("\(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                }
                                                             }
                                                         }else{
-                                                            Text("\(formatTime(timeString: stop.atd ?? "00:00"))")
-                                                                .font(.headline).bold()
-                                                                .foregroundStyle(Color.primary)
-                                                                .frame(maxWidth: 72, alignment: .trailing)
-                                                            Spacer()
+                                                            if stop.atd ?? "" != "" {
+                                                                Text("Departed On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                            }else{
+                                                                if stop.ata ?? "" != "" {
+                                                                    Text("Arrived On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                }else{
+                                                                    Text("On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
-                                                .padding(.top, -17)
-                                            }else{
-                                                if stop.ata ?? "" != "" {
-                                                    VStack(alignment: .leading){
-                                                        if stop.isCancelled {
-                                                            Text("\(formatTime(timeString: stop.ata ?? "00:00"))")
-                                                                .font(.headline).bold()
-                                                                .foregroundStyle(Color.red)
-                                                                .strikethrough()
-                                                                .frame(maxWidth: 72, alignment: .trailing)
-                                                            Spacer()
-                                                            
-                                                        }else{
-                                                            if stop.lateness ?? 0 > 0 {
-                                                                if stop.ata ?? "" != "" || stop.ata ?? "" != "UNKN" {
-                                                                    Text("\(formatTime(timeString: stop.ata ?? "00:00"))")
-                                                                        .font(.headline).bold()
-                                                                        .foregroundStyle(Color.orange)
-                                                                        .frame(maxWidth: 72, alignment: .trailing)
-                                                                    Spacer()
-                                                                    
-                                                                }else{
-                                                                    Text("\(formatTime(timeString: stop.ata ?? "00:00"))")
-                                                                        .font(.headline).bold()
-                                                                        .foregroundStyle(Color.orange)
-                                                                        .frame(maxWidth: 72, alignment: .trailing)
-                                                                    Spacer()
-                                                                    
-                                                                }
-                                                            }else{
-                                                                Text("\(formatTime(timeString: stop.ata ?? "00:00"))")
-                                                                    .font(.headline).bold()
-                                                                    .foregroundStyle(Color.primary)
-                                                                    .frame(maxWidth: 72, alignment: .trailing)
-                                                                Spacer()
-                                                            }
-                                                        }
-                                                    }
-                                                    .padding(.top, -17)
-                                                    
-                                                }else{
-                                                    VStack(alignment: .leading){
-                                                        if stop.isCancelled {
-                                                            Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                .font(.headline).bold()
-                                                                .foregroundStyle(Color.red)
-                                                                .strikethrough()
-                                                                .frame(maxWidth: 72, alignment: .trailing)
-                                                            Spacer()
-                                                            
-                                                        }else{
-                                                            if stop.lateness ?? 0 > 0 {
-                                                                if stop.eta ?? "" != "" || stop.eta ?? "" != "UNKN" {
-                                                                    Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
-                                                                        .font(.headline).bold()
-                                                                        .foregroundStyle(Color.orange)
-                                                                        .frame(maxWidth: 72, alignment: .trailing)
-                                                                    Spacer()
-                                                                    
-                                                                }else{
-                                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                        .font(.headline).bold()
-                                                                        .foregroundStyle(Color.orange)
-                                                                        .frame(maxWidth: 72, alignment: .trailing)
-                                                                    Spacer()
-                                                                    
-                                                                }
-                                                            }else{
-                                                                Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                    .font(.headline).bold()
-                                                                    .foregroundStyle(Color.primary)
-                                                                    .frame(maxWidth: 72, alignment: .trailing)
-                                                                Spacer()
-                                                            }
-                                                        }
-                                                    }
-                                                    .padding(.top, -17)
-                                                    
-                                                }
+                                                .padding(.top, -5)
+
+                                                Spacer()
                                             }
-                                            
+                                            .padding(.top, -16)
                                         }
                                         .padding(.bottom, -16)
                                     }
@@ -589,8 +554,6 @@ struct TrainServiceSheet: View {
                         
                     }
                     .frame(maxWidth: .infinity, alignment: .top)
-                    .background(colorScheme == .dark ? Color(red: 28/255, green: 28/255, blue: 30/255) : Color(red: 242/255, green: 242/255, blue: 247/255))
-                    .cornerRadius(6)
                     .padding(.vertical)
                     
                 }
@@ -634,10 +597,14 @@ struct TrainServiceSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
                 }
+                #if os(iOS)
                 .buttonStyle(.glassProminent)
+                #endif
                 .padding()
+                .padding(.horizontal)
             }
-        }.onAppear() {
+        }
+        .onAppear() {
             fetchData(uid: currentDeparture.uid, sdd: currentDeparture.sdd)
         }
     }
@@ -646,5 +613,5 @@ struct TrainServiceSheet: View {
 #Preview {
     @Previewable @Environment(\.colorScheme) var colorScheme
 
-    TrainServiceSheet(currentDeparture: DepartureItem(origin: "Abbey Wood", destination: "Reading", operator: "Elizabeth Line", operatorCode: "XR", cancelled: false, headcode: "9R56", trainLength: 9, expectedDeparture: "2026-01-29T20:17:00", isDelayed: false, delayLength: 0, rid: "202601257602417", uid: "G23712", sdd: "2026-01-29"), laterDepartures: [])
+    TrainServiceSheet(currentDeparture: DepartureItem(origin: "Abbey Wood", destination: "Reading", operator: "Elizabeth Line", operatorCode: "XR", cancelled: false, headcode: "9R56", trainLength: 9, expectedDeparture: "2026-02-07T11:45:00", isDelayed: false, delayLength: 0, rid: "202602078073046", uid: "P73046", sdd: "2026-02-07"), laterDepartures: [fake_departure_item, fake_departure_item, fake_departure_item])
 }
