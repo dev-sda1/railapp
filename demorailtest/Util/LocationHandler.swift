@@ -86,8 +86,8 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
 }
 
 private func getCurrentLocation() async -> LocationData {
-    var locationManager = LocationManager()
-    var location: CLLocation?
+    let locationManager = LocationManager()
+    let location: CLLocation?
     
     var res = LocationData(latitude: 0.0, longitude: 0.0, isSuccess: false)
     

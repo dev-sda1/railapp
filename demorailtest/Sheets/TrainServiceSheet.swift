@@ -76,12 +76,15 @@ struct TrainServiceSheet: View {
     @State var currentDeparture: DepartureItem
     @State var laterDepartures: [DepartureItem]
     @State private var allPinnedServices: [PinnedService] = []
+    @State private var showDetailed: Bool = false
 
     @State private var isDarwin = AppSettingsManager().useDarwin
     @State private var task: Task<(), Error>?
 
     func fetchData(uid: String, sdd: String){
-        guard task == nil else { return }
+        if task != nil {
+            task?.cancel()
+        }
         
         self.allPinnedServices = Array(pinnedServiceQuery)
         self.allPinnedServices.forEach { pinnedServiceItem in
@@ -92,12 +95,12 @@ struct TrainServiceSheet: View {
         }
 
             
-        var urlString = "https://d-railboard.pyxlwuff.dev/service/new/\(uid)/\(sdd)/standard"
+        var urlString = "https://d-railboard.pyxlwuff.dev/service/new/\(uid)/\(sdd)/\(showDetailed == true ? "detailed" : "standard")"
         
         if isDarwin == true {
-            urlString = "https://d-railboard.pyxlwuff.dev/service/new/\(uid)/\(sdd)/standard"
+            urlString = "https://d-railboard.pyxlwuff.dev/service/new/\(uid)/\(sdd)/\(showDetailed == true ? "detailed" : "standard")"
         }else{
-            urlString = "https://d-railboard.pyxlwuff.dev/service/\(uid)/\(sdd)/standard"
+            urlString = "https://d-railboard.pyxlwuff.dev/service/\(uid)/\(sdd)/\(showDetailed == true ? "detailed" : "standard")"
         }
                 
         guard !fetchingServiceData || !refreshingData else { return }
@@ -152,7 +155,7 @@ struct TrainServiceSheet: View {
                     
                     if isDarwin == true {
                         VStack{
-                            Text("\(currentDeparture.uid) \(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
+                            Text("\(currentDeparture.destination)").font(.title3).bold().frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.primary)
                             Text("\(formatTime(timeString: currentDeparture.expectedDeparture))").font(.title3).bold().foregroundStyle(Color.gray).frame(maxWidth: .infinity, alignment: .leading)
                         }
 
@@ -262,6 +265,9 @@ struct TrainServiceSheet: View {
                             }
                         }
                         .pickerStyle(.segmented)
+                        .onChange(of: currentDeparture.rid) { _ in
+                            fetchData(uid: currentDeparture.uid, sdd: currentDeparture.sdd)
+                        }
                     }
                     .padding(.top)
                     .padding(.horizontal, 50)
@@ -294,6 +300,16 @@ struct TrainServiceSheet: View {
                 
                 VStack{
                     VStack{
+                        HStack{
+                            Button {
+                                showDetailed.toggle()
+                                fetchData(uid: currentDeparture.uid, sdd: currentDeparture.sdd)
+                            } label: {
+                                Text("Show \(showDetailed == true ? "Basic" : "Detailed (beta)")")
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal)
                         VStack(alignment: .center){
                             ForEach(serviceData.journey) { stop in
                                 if serviceData.journey.first?.crs == stop.crs {
@@ -316,11 +332,11 @@ struct TrainServiceSheet: View {
                                                     if stop.lateness ?? 0 > 0 {
                                                         if stop.etd ?? "" != "" {
                                                             HStack {
-                                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                                Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
                                                                     .font(.headline)
                                                                     .foregroundStyle(Color.red)
                                                                     .strikethrough()
-                                                                Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
+                                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
                                                                     .font(.headline)
                                                                     .foregroundStyle(Color.primary)
                                                             }
@@ -462,47 +478,63 @@ struct TrainServiceSheet: View {
                                     }else{
                                         HStack{
                                             VStack(alignment: .center){
-                                                Circle().overlay(Circle().stroke(Color.white, lineWidth: 3)).frame(width: 15, height: 15).offset(x: 0, y: -6).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).zIndex(2.0).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
-                                                Rectangle().frame(width: 4, height: 75).offset(x: 0, y: -14).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).opacity(stop.atd ?? "" != "" || stop.isCancelled == true ? 0.5 : 1.0)
+                                                Circle().overlay(Circle().stroke(Color.white, lineWidth: 3)).frame(width: 15, height: 15).offset(x: 0, y: -6).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).zIndex(2.0).opacity((stop.atd ?? "" != "" || stop.isCancelled == true) || (stop.isPass == true && stop.ata ?? "" != "") ? 0.5 : 1.0)
+                                                Rectangle().frame(width: 4, height: 75).offset(x: 0, y: -14).foregroundStyle(Color(red: 1/255, green: 48/255, blue: 102/255)).opacity((stop.atd ?? "" != "" || stop.isCancelled == true) || (stop.isPass == true && stop.ata ?? "" != "") ? 0.5 : 1.0)
                                             }
                                             
                                             VStack(alignment: .leading) {
                                                 HStack(){
-                                                    Text("\(stop.locationName)").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                                                    if stop.isPass == true {
+                                                        Text("\(stop.locationName) (Pass)").font(.headline).frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Color.secondary).italic()
+                                                    }else{
+                                                        Text("\(stop.locationName)").font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+                                                    }
                                                     
                                                     if stop.isCancelled {
-                                                        Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                        Text("\(formatTime(timeString: stop.std ?? "00:00"))")
                                                             .font(.headline)
                                                             .foregroundStyle(Color.red)
                                                             .strikethrough()
                                                     }else{
                                                         if stop.lateness ?? 0 > 0 {
-                                                            if stop.eta ?? "" != "" {
+                                                            if stop.eta != nil {
                                                                 HStack {
-                                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                    Text("\(formatTime(timeString: stop.std ?? "00:00"))")
                                                                         .font(.headline)
                                                                         .foregroundStyle(Color.red)
                                                                         .strikethrough()
-                                                                    Text("\(formatTime(timeString: stop.eta ?? "00:00"))")
+                                                                    Text("\(formatTime(timeString: stop.etd ?? "00:00"))")
                                                                         .font(.headline)
                                                                         .foregroundStyle(Color.primary)
                                                                 }
         
                                                             }else{
-                                                                Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                    .font(.headline)
-                                                                    .foregroundStyle(Color.orange)
+                                                                if stop.std != nil {
+                                                                    Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.orange)
+                                                                }else{
+                                                                    Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                        .font(.headline)
+                                                                        .foregroundStyle(Color.orange)
+                                                                }
                                                             }
                                                         }else{
-                                                            Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
-                                                                .font(.headline)
-                                                                .foregroundStyle(Color.primary)
+                                                            if stop.std != nil {
+                                                                Text("\(formatTime(timeString: stop.std ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.primary)
+                                                            }else{
+                                                                Text("\(formatTime(timeString: stop.sta ?? "00:00"))")
+                                                                    .font(.headline)
+                                                                    .foregroundStyle(Color.primary)
+                                                            }
                                                         }
                                                     }
                                                 }
                                                 
                                                 HStack{
-                                                    Text("Platform \(stop.platform ?? "Unknown")")
+                                                    Text("Platform \(stop.platform ?? "Unknown" != "" ? stop.platform ?? "Unknown" : "Unknown")")
                                                         .padding([.leading, .trailing], 10.0)
                                                         .padding([.top, .bottom], 2.0)
                                                         .font(.caption).bold()
@@ -520,7 +552,7 @@ struct TrainServiceSheet: View {
                                                                 Text("Departed \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
                                                             }else {
                                                                 if stop.ata ?? "" != "" {
-                                                                    Text("Arrived \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                    Text("\(stop.isPass == true ? "Passed" : "Arrived") \(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
                                                                 }else{
                                                                     Text("\(stop.lateness ?? 0) min late").font(.subheadline).foregroundStyle(Color.secondary)
                                                                 }
@@ -530,7 +562,7 @@ struct TrainServiceSheet: View {
                                                                 Text("Departed On Time").font(.subheadline).foregroundStyle(Color.secondary)
                                                             }else{
                                                                 if stop.ata ?? "" != "" {
-                                                                    Text("Arrived On Time").font(.subheadline).foregroundStyle(Color.secondary)
+                                                                    Text("\(stop.isPass == true ? "Passed" : "Arrived") On Time").font(.subheadline).foregroundStyle(Color.secondary)
                                                                 }else{
                                                                     Text("On Time").font(.subheadline).foregroundStyle(Color.secondary)
                                                                 }
@@ -613,5 +645,5 @@ struct TrainServiceSheet: View {
 #Preview {
     @Previewable @Environment(\.colorScheme) var colorScheme
 
-    TrainServiceSheet(currentDeparture: DepartureItem(origin: "Abbey Wood", destination: "Reading", operator: "Elizabeth Line", operatorCode: "XR", cancelled: false, headcode: "9R56", trainLength: 9, expectedDeparture: "2026-02-07T11:45:00", isDelayed: false, delayLength: 0, rid: "202602078073046", uid: "P73046", sdd: "2026-02-07"), laterDepartures: [fake_departure_item, fake_departure_item, fake_departure_item])
+    TrainServiceSheet(currentDeparture: DepartureItem(origin: "Abbey Wood", destination: "Reading", operator: "Elizabeth Line", operatorCode: "XR", cancelled: false, headcode: "9R56", trainLength: 9, expectedDeparture: "2026-02-07T11:45:00", isDelayed: false, delayLength: 0, rid: "202602078073046", uid: "W01975", sdd: "2026-02-07"), laterDepartures: [fake_departure_item, fake_departure_item, fake_departure_item])
 }

@@ -280,7 +280,7 @@ struct DepartureCardView : View {
                             Text("No departures expected for the next two hours.")
                             .fixedSize(horizontal: false, vertical: true)
                             .foregroundStyle(Color.primary)
-                            .padding(.horizontal)
+                            .padding(.vertical)
 
                         }
                     }

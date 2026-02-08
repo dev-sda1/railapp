@@ -30,6 +30,10 @@ struct ContentView: View {
                 StationSearch()
             }
             
+//            Tab("Debug", systemImage: "hammer.fill", value: TabKey.debug) {
+//                QuickDebugView()
+//            }
+            
         }
         
         #if os(iOS)
@@ -51,7 +55,7 @@ struct ContentView: View {
 }
 
 private enum TabKey: Hashable {
-    case here, live, journeys
+    case here, live, journeys, debug
 }
 
 struct BottomAccessoryView: View {
